@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
@@ -9,69 +9,55 @@ export default function HomeScreen() {
     router.push(route);
   };
 
-  const sections = [
-    {
-      title: 'Biblioteca',
-      screens: [
-        { name: 'Biblioteca', route: '/Biblioteca/screen1' },
-        { name: 'Libros Educativos', route: '/Biblioteca/Libros educativos/screen2' },
-        { name: 'Libros Legibles', route: '/Biblioteca/Libros legibles/screen3' },
-      ]
-    },
-    {
-      title: 'Calendario',
-      screens: [
-        { name: 'Calendario', route: '/Calendario/screen4' },
-        { name: 'Nueva Fecha', route: '/Calendario/Newdate/screen5' },
-      ]
-    },
-    {
-      title: 'Directorio',
-      screens: [
-        { name: 'Directorio', route: '/Directorio/screen6' },
-        { name: 'Alimentación', route: '/Directorio/Alimentacion/screen7' },
-        { name: 'Comunitario Legal', route: '/Directorio/Comunitario-legal/screen8' },
-        { name: 'Psicología', route: '/Directorio/Psicolgia/screen9' },
-        { name: 'Salud', route: '/Directorio/Salud/screen10' },
-      ]
-    },
-    {
-      title: 'Otros',
-      screens: [
-        { name: 'Fafore', route: '/Fafore/screen11' },
-        { name: 'Moms Week', route: '/Moms-week/screen12' },
-        { name: 'Actividad de Hoy', route: '/Moms-week/TodaysActivity/screen13' },
-        { name: 'Ver PDF', route: '/Moms-week/ViewPdf/screen14' },
-        { name: 'Ver Días Anteriores', route: '/Moms-week/ViewPreviuosDays/screen15' },
-        { name: 'Editar', route: '/Moms-week/ViewPreviuosDays/edit/screen16' },
-        { name: 'Usuario', route: '/Usuario/screen17' },
-        { name: 'Pantalla 18', route: '/screen18' },
-      ]
-    }
-  ];
-
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Conectando Corazones</Text>
-      <Text style={styles.subtitle}>Navegación organizada por secciones</Text>
+      <Text style={styles.subtitle}>Navegación a 18 pantallas</Text>
       
-      {sections.map((section, sectionIndex) => (
-        <View key={sectionIndex} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-          <View style={styles.sectionGrid}>
-            {section.screens.map((screen, screenIndex) => (
-              <TouchableOpacity 
-                key={screenIndex} 
-                style={styles.navButton}
-                onPress={() => navigateToScreen(screen.route)}
-              >
-                <Text style={styles.navButtonText}>{screen.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      ))}
-    </ScrollView>
+      <View style={styles.navigationGrid}>
+        <TouchableOpacity 
+          style={styles.navButton}
+          onPress={() => navigateToScreen('/Biblioteca/screen1')}
+        >
+          <Text style={styles.navButtonText}>Biblioteca</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navButton}
+          onPress={() => navigateToScreen('/Calendario/screen4')}
+        >
+          <Text style={styles.navButtonText}>Calendario</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navButton}
+          onPress={() => navigateToScreen('/Directorio/screen6')}
+        >
+          <Text style={styles.navButtonText}>Directorio</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navButton}
+          onPress={() => navigateToScreen('/Fafore/screen11')}
+        >
+          <Text style={styles.navButtonText}>Fafore</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navButton}
+          onPress={() => navigateToScreen('/Moms-week/screen12')}
+        >
+          <Text style={styles.navButtonText}>Moms Week</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navButton}
+          onPress={() => navigateToScreen('/Usuario/screen17')}
+        >
+          <Text style={styles.navButtonText}>Usuario</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -93,16 +79,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#666',
   },
-  section: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  sectionGrid: {
+  navigationGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
