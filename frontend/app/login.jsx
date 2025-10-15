@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import Logo from '../components/Logo';
 import { Colors } from '../constants/colors';
 import { FontSizes, Spacing, ScreenDimensions } from '../constants/dimensions';
 
@@ -32,6 +33,7 @@ export default function LoginScreen() {
     // Navegar a pantalla de registro
     console.log('Crear cuenta');
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -86,15 +88,8 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <View style={styles.logoContainer}>
-              <View style={styles.logoGraphic}>
-                <View style={styles.logoShape1} />
-                <View style={styles.logoShape2} />
-                <View style={styles.logoShape3} />
-              </View>
-              <Text style={styles.logoText}>FAFORE</Text>
-            </View>
-            <Text style={styles.logoSubtext}>Familia, Fortaleza Y Reinserción A.C.</Text>
+            <Logo size="large" />
+
           </View>
         </KeyboardAvoidingView>
       </LinearGradient>
@@ -170,41 +165,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.md,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  logoGraphic: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  logoShape1: {
-    width: 20,
-    height: 20,
-    backgroundColor: Colors.brand.yellow,
-    borderRadius: 4,
-    marginRight: 5,
-  },
-  logoShape2: {
-    width: 15,
-    height: 25,
-    backgroundColor: Colors.brand.orange,
-    borderRadius: 8,
-    marginRight: 5,
-  },
-  logoShape3: {
-    width: 18,
-    height: 18,
-    backgroundColor: Colors.brand.purple,
-    borderRadius: 9,
-  },
-  logoText: {
-    fontSize: FontSizes.lg,
-    fontWeight: 'bold',
-    color: Colors.text.primary,
-    letterSpacing: 2,
   },
   logoSubtext: {
     fontSize: FontSizes.xs,
