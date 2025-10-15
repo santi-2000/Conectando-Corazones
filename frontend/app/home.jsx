@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 export default function HomeScreen() {
   const router = useRouter();
 
-  const navigateToScreen = (route: string) => {
+  const navigateToScreen = (route) => {
     router.push(route);
   };
 

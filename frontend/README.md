@@ -1,50 +1,121 @@
-# Welcome to your Expo app 👋
+# Conectando Corazones - Frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Una aplicación móvil desarrollada con React Native y Expo, diseñada para ser compatible con dispositivos Android e iPhone, especialmente dirigida a usuarios de bajos recursos.
 
-## Get started
+## 🚀 Características
 
-1. Install dependencies
+- **Diseño Responsive**: Compatible con Android e iPhone
+- **Componentes Reutilizables**: Arquitectura modular
+- **JavaScript Puro**: Sin TypeScript para mayor simplicidad
+- **Gradientes Modernos**: Diseño atractivo y profesional
+- **Navegación Intuitiva**: Expo Router para navegación fluida
 
-   ```bash
-   npm install
-   ```
+## 📱 Pantallas
 
-2. Start the app
+### Pantalla de Inicio de Sesión
+- **Ruta**: `/login`
+- **Características**:
+  - Gradiente de colores vibrantes (magenta a naranja)
+  - Campos de usuario y contraseña
+  - Botón de "Crear cuenta"
+  - Logo de FAFORE
+  - Diseño responsive para diferentes tamaños de pantalla
 
-   ```bash
-   npx expo start
-   ```
+### Pantalla Principal (Home)
+- **Ruta**: `/home`
+- **Características**:
+  - Navegación a 18 pantallas diferentes
+  - Módulos: Biblioteca, Calendario, Directorio, Fafore, Moms Week, Usuario
 
-In the output, you'll find options to open the app in a
+## 🏗️ Estructura del Proyecto
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+frontend/
+├── app/                    # Pantallas de la aplicación
+│   ├── index.jsx          # Redirección a login
+│   ├── login.jsx          # Pantalla de inicio de sesión
+│   ├── home.jsx           # Pantalla principal
+│   ├── _layout.jsx        # Configuración de navegación
+│   └── [módulos]/         # Pantallas por módulos
+├── components/            # Componentes reutilizables
+│   ├── Button.jsx         # Botón personalizable
+│   └── Input.jsx          # Campo de entrada
+├── constants/            # Constantes y configuración
+│   ├── colors.js         # Paleta de colores
+│   ├── dimensions.js     # Dimensiones responsive
+│   └── theme.js          # Tema de la aplicación
+└── assets/               # Recursos (imágenes, etc.)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🎨 Sistema de Diseño
 
-## Learn more
+### Colores
+- **Gradiente Principal**: Magenta (#8B1A8B) → Naranja (#FF6B35)
+- **Botones**: Rosa claro (#FFB6C1), Azul iOS (#007AFF)
+- **Texto**: Gris oscuro (#333), Gris medio (#666)
+- **Marca FAFORE**: Amarillo (#FFD700), Naranja (#FF6B35), Morado (#8B1A8B)
 
-To learn more about developing your project with Expo, look at the following resources:
+### Componentes
+- **Button**: Botón personalizable con variantes (primary, secondary, outline)
+- **Input**: Campo de entrada con validación y estilos consistentes
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Responsive Design
+- **Dispositivos Pequeños**: < 375px
+- **Dispositivos Medianos**: 375px - 414px
+- **Dispositivos Grandes**: > 414px
+- **Tamaños de Fuente**: Adaptativos según el dispositivo
+- **Espaciado**: Sistema consistente de espaciado
 
-## Join the community
+## 🛠️ Tecnologías
 
-Join our community of developers creating universal apps.
+- **React Native**: Framework principal
+- **Expo**: Herramientas de desarrollo y build
+- **Expo Router**: Navegación
+- **Expo Linear Gradient**: Gradientes
+- **JavaScript**: Lenguaje principal (sin TypeScript)
+- **ESLint**: Linting y calidad de código
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📦 Instalación y Desarrollo
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar el servidor de desarrollo
+npm start
+
+# Ejecutar en Android
+npm run android
+
+# Ejecutar en iOS
+npm run ios
+
+# Ejecutar en Web
+npm run web
+
+# Linting
+npm run lint
+```
+
+## 🎯 Objetivos de Accesibilidad
+
+- **Compatibilidad Universal**: Android e iPhone
+- **Optimización para Dispositivos de Bajo Costo**: Rendimiento optimizado
+- **Interfaz Intuitiva**: Fácil de usar para todos los usuarios
+- **Diseño Responsive**: Se adapta a diferentes tamaños de pantalla
+
+## 📋 Próximos Pasos
+
+1. **Implementar Autenticación**: Sistema de login real
+2. **Desarrollar Módulos**: Completar las 18 pantallas
+3. **Agregar Funcionalidades**: Características específicas por módulo
+4. **Optimización**: Mejoras de rendimiento
+5. **Testing**: Pruebas en dispositivos reales
+
+## 🤝 Contribución
+
+El proyecto está estructurado para facilitar el desarrollo colaborativo con:
+- Componentes reutilizables
+- Constantes centralizadas
+- Estructura modular
+- Código limpio y documentado

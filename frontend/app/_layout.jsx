@@ -4,7 +4,8 @@ import { Stack } from 'expo-router';
 export default function RootLayout() {
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ title: 'Inicio' }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="home" options={{ title: 'Inicio' }} />
       <Stack.Screen name="Biblioteca/screen1" options={{ title: 'Biblioteca' }} />
       <Stack.Screen name="Calendario/screen4" options={{ title: 'Calendario' }} />
       <Stack.Screen name="Directorio/screen6" options={{ title: 'Directorio' }} />
