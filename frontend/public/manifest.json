@@ -1,0 +1,98 @@
+{
+  "name": "Conectando Corazones",
+  "short_name": "Conectando",
+  "description": "App de apoyo familiar para madres y familias",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E6F4FE",
+  "theme_color": "#E6F4FE",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["education", "lifestyle", "social"],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-screenshot.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Directorio de Apoyo",
+      "short_name": "Directorio",
+      "description": "Acceso directo al directorio de apoyo",
+      "url": "/Directorio/screen6",
+      "icons": [
+        {
+          "src": "/icons/shortcut-directorio.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Biblioteca Escolar",
+      "short_name": "Biblioteca",
+      "description": "Acceso directo a la biblioteca escolar",
+      "url": "/Biblioteca/screen1",
+      "icons": [
+        {
+          "src": "/icons/shortcut-biblioteca.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

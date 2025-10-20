@@ -11,12 +11,15 @@ export const ScreenDimensions = {
   isLargeDevice: width >= 414,
 };
 
-// Breakpoints para responsive design
+// Breakpoints para responsive design PWA
 export const Breakpoints = {
-  small: 320,
-  medium: 375,
-  large: 414,
-  xlarge: 768,
+  mobile: 320,    // iPhone SE
+  mobileLarge: 375, // iPhone 12/13/14
+  mobileXL: 414,   // iPhone Plus
+  tablet: 768,     // iPad
+  tabletLarge: 1024, // iPad Pro
+  desktop: 1200,   // Desktop
+  largeDesktop: 1440
 };
 
 // Espaciado consistente
