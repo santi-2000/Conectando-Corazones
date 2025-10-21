@@ -18,20 +18,9 @@ export default {
       predictiveBackGestureEnabled: false
     },
     web: {
-      output: "single",
+      output: "static",
       bundler: "metro",
-      favicon: "./assets/images/logo-fafore.png",
-      name: "Conectando Corazones",
-      shortName: "Conectando",
-      description: "App de apoyo familiar para madres y familias",
-      themeColor: "#E6F4FE",
-      backgroundColor: "#E6F4FE",
-      display: "standalone",
-      orientation: "portrait",
-      startUrl: "/",
-      scope: "/",
-      lang: "es",
-      dir: "ltr"
+      favicon: "./assets/images/logo-fafore.png"
     },
     plugins: [
       "expo-router",

@@ -1,13 +1,14 @@
 import React from 'react';
 import { Stack } from 'expo-router';
+import { Platform } from 'react-native';
 import PWAInstaller from '../components/PWAInstaller';
 import OfflineIndicator from '../components/OfflineIndicator';
 
 export default function RootLayout() {
   return (
     <>
-      <PWAInstaller />
-      <OfflineIndicator />
+      {Platform.OS === 'web' && <PWAInstaller />}
+      {Platform.OS === 'web' && <OfflineIndicator />}
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="home" options={{ title: 'Inicio' }} />
