@@ -1,12 +1,15 @@
 export default {
   expo: {
     name: "Conectando Corazones",
-    slug: "Conectando-Corazones",
+    slug: "conectando-corazones",
     version: "1.0.0",
     orientation: "portrait",
     scheme: "conectandocorazones",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
+    developmentClient: {
+      silentLaunch: true
+    },
     ios: {
       supportsTablet: true
     },
@@ -40,9 +43,7 @@ export default {
       reactCompiler: true
     },
     extra: {
-      eas: {
-        projectId: "your-project-id-here"
-      }
+      // Removed EAS projectId to allow anonymous development
     }
   }
 };
