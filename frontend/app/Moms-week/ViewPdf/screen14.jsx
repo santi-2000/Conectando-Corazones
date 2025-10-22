@@ -32,16 +32,17 @@ export default function VistaPdf() {
     // Aquí iría la lógica para generar el PDF real
   };
 
-  const handleCompartir = () => {
-    console.log('Compartir PDF');
-    // Aquí iría la lógica para compartir el PDF
+  const handleEditarDia = (dayNumber) => {
+    console.log(`Editar día ${dayNumber}`);
+    // Aquí iría la navegación a la pantalla de edición del día específico
+    router.push(`/Moms-week/TodaysActivity/screen13?day=${dayNumber}`);
   };
+
 
   const handleImageError = () => {
     setImageError(true);
   };
 
-  // Datos simulados de la semana
   const weekData = {
     weekNumber: 42,
     dateRange: '7-13 de octubre',
@@ -224,11 +225,27 @@ export default function VistaPdf() {
                         ))}
                       </View>
                     )}
+
+                    {/* Edit Button */}
+                    <TouchableOpacity 
+                      style={styles.editButton}
+                      onPress={() => handleEditarDia(day.day.split(' ')[1])}
+                    >
+                      <Text style={styles.editButtonText}>✏️ Editar este día</Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.pendingDay}>
                     <Text style={styles.pendingText}>📝 Día pendiente</Text>
                     <Text style={styles.pendingSubtext}>Completa este día para incluirlo en tu libro</Text>
+                    
+                    {/* Add Day Button */}
+                    <TouchableOpacity 
+                      style={styles.addDayButton}
+                      onPress={() => handleEditarDia(day.day.split(' ')[1])}
+                    >
+                      <Text style={styles.addDayButtonText}>➕ Agregar entrada</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
               </View>
@@ -248,13 +265,6 @@ export default function VistaPdf() {
               onPress={handleGenerarPDF}
               variant="primary"
               style={styles.generateButton}
-            />
-
-            <Button
-              title="📤 Compartir"
-              onPress={handleCompartir}
-              variant="secondary"
-              style={styles.shareButton}
             />
           </View>
         </ScrollView>
@@ -581,13 +591,38 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  shareButton: {
+  editButton: {
     backgroundColor: '#FF6B9D',
-    borderRadius: 20,
+    borderRadius: 12,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    alignItems: 'center',
     shadowColor: '#FF6B9D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  editButtonText: {
+    color: 'white',
+    fontSize: FontSizes.md,
+    fontWeight: 'bold',
+  },
+  addDayButton: {
+    backgroundColor: '#4A90E2',
+    borderRadius: 12,
+    padding: Spacing.md,
+    marginTop: Spacing.md,
+    alignItems: 'center',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addDayButtonText: {
+    color: 'white',
+    fontSize: FontSizes.md,
+    fontWeight: 'bold',
   },
 });

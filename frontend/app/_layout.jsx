@@ -3,10 +3,11 @@ import { Stack } from 'expo-router';
 import { Platform } from 'react-native';
 import PWAInstaller from '../components/PWAInstaller';
 import OfflineIndicator from '../components/OfflineIndicator';
+import { UserProvider } from '../contexts/UserContext';
 
 export default function RootLayout() {
   return (
-    <>
+    <UserProvider>
       {Platform.OS === 'web' && <PWAInstaller />}
       {Platform.OS === 'web' && <OfflineIndicator />}
       <Stack>
@@ -38,14 +39,17 @@ export default function RootLayout() {
         <Stack.Screen name="Moms-week/screen12" options={{ title: 'Moms Week' }} />
         <Stack.Screen name="Moms-week/TodaysActivity/screen13" options={{ title: 'Actividad de Hoy', headerShown: false }} />
         <Stack.Screen name="Moms-week/ViewPdf/screen14" options={{ title: 'Vista PDF', headerShown: false }} />
-        <Stack.Screen name="Moms-week/ViewPdf/screen14-test" options={{ title: 'Vista PDF Test', headerShown: false }} />
         <Stack.Screen name="Moms-week/ViewPreviuosDays/screen15" options={{ title: 'Días Anteriores', headerShown: false }} />
         <Stack.Screen name="Moms-week/ViewPreviuosDays/edit/screen16" options={{ title: 'Editar Día', headerShown: false }} />
         
         {/* Usuario */}
         <Stack.Screen name="Usuario/screen17" options={{ title: 'Usuario' }} />
+        
+        {/* Admin */}
+        <Stack.Screen name="Admin/Statistics" options={{ title: 'Estadísticas', headerShown: false }} />
+        
         <Stack.Screen name="screen18" options={{ title: 'Pantalla 18' }} />
       </Stack>
-    </>
+    </UserProvider>
   );
 }

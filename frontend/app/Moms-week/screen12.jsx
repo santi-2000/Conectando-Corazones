@@ -24,7 +24,7 @@ export default function MiSemanaConMama() {
   };
 
   const handleProfile = () => {
-    console.log('Navegando al perfil');
+    router.push('/Usuario/screen17');
   };
 
   const handleAgregarEntrada = () => {
@@ -60,14 +60,14 @@ export default function MiSemanaConMama() {
     return "✨ ¡Empieza tu semana con mamá!";
   };
 
-  const handleVistaPreviaDias = () => {
-    console.log('Ver días anteriores');
-    router.push('/Moms-week/ViewPreviuosDays/screen15');
-  };
+  // const handleVistaPreviaDias = () => {
+  //   console.log('Ver días anteriores');
+  //   router.push('/Moms-week/ViewPreviuosDays/screen15');
+  // };
 
   const handleVistaPreviaPDF = () => {
     console.log('Ver preview PDF');
-    router.push('/Moms-week/ViewPdf/screen14-test');
+    router.push('/Moms-week/ViewPdf/screen14');
   };
 
   const handleImageError = () => {
@@ -186,34 +186,34 @@ export default function MiSemanaConMama() {
             📚 Solo podrás generar tu libro semanal cuando completes todos los días
           </Text>
 
-          {/* Bottom Navigation Cards */}
-          <View style={styles.bottomCards}>
-            <TouchableOpacity 
-              style={styles.bottomCard}
-              onPress={handleVistaPreviaDias}
-            >
-              <Text style={styles.bottomCardEmoji}>📖</Text>
-              <Text style={styles.bottomCardText}>
-                Ver mis días anteriores
-              </Text>
-              <Text style={styles.bottomCardSubtext}>
-                Revisa lo que escribiste
-              </Text>
-            </TouchableOpacity>
+              {/* Bottom Navigation Cards */}
+              <View style={styles.bottomCards}>
+                {/* <TouchableOpacity 
+                  style={styles.bottomCard}
+                  onPress={handleVistaPreviaDias}
+                >
+                  <Text style={styles.bottomCardEmoji}>📖</Text>
+                  <Text style={styles.bottomCardText}>
+                    Ver mis días anteriores
+                  </Text>
+                  <Text style={styles.bottomCardSubtext}>
+                    Revisa lo que escribiste
+                  </Text>
+                </TouchableOpacity> */}
 
-            <TouchableOpacity 
-              style={styles.bottomCard}
-              onPress={handleVistaPreviaPDF}
-            >
-              <Text style={styles.bottomCardEmoji}>👀</Text>
-              <Text style={styles.bottomCardText}>
-                Vista previa del libro
-              </Text>
-              <Text style={styles.bottomCardSubtext}>
-                Mira cómo se verá
-              </Text>
-            </TouchableOpacity>
-          </View>
+                <TouchableOpacity 
+                  style={[styles.bottomCard, styles.singleCard]}
+                  onPress={handleVistaPreviaPDF}
+                >
+                  <Text style={styles.bottomCardEmoji}>👀</Text>
+                  <Text style={styles.bottomCardText}>
+                    Vista previa del libro
+                  </Text>
+                  <Text style={styles.bottomCardSubtext}>
+                    Mira cómo se verá y edita
+                  </Text>
+                </TouchableOpacity>
+              </View>
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
@@ -471,11 +471,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: Spacing.xs,
   },
-  bottomCardSubtext: {
-    fontSize: FontSizes.sm,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
+      bottomCardSubtext: {
+        fontSize: FontSizes.sm,
+        color: Colors.text.secondary,
+        textAlign: 'center',
+        fontStyle: 'italic',
+      },
+      singleCard: {
+        width: '100%',
+        maxWidth: 300,
+        alignSelf: 'center',
+      },
 });
 

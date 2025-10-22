@@ -22,7 +22,7 @@ export default function BibliotecaEscolar() {
   };
 
   const handleProfile = () => {
-    console.log('Navegando al perfil');
+    router.push('/Usuario/screen17');
   };
 
   const handleLibrosEducativos = () => {

@@ -11,15 +11,35 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import HomeButton from '../components/HomeButton';
+import { useUser } from '../contexts/UserContext';
 import { Colors } from '../constants/colors';
 import { FontSizes, Spacing } from '../constants/dimensions';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user, isAdmin, isLoading } = useUser();
 
   const navigateToScreen = (route) => {
     router.push(route);
   };
+
+  const handleProfile = () => {
+    router.push('/Usuario/screen17');
+  };
+
+  const handleStatistics = () => {
+    router.push('/Admin/Statistics');
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -34,7 +54,7 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.headerButton}>
             <Text style={styles.headerIcon}>❤️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleProfile}>
             <Text style={styles.headerIcon}>👤</Text>
           </TouchableOpacity>
         </View>
@@ -84,13 +104,15 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Estadísticas Button */}
-          <TouchableOpacity 
-            style={styles.statsButton}
-            onPress={() => navigateToScreen('/Usuario/screen17')}
-          >
-            <Text style={styles.statsButtonText}>Estadísticas</Text>
-          </TouchableOpacity>
+          {/* Estadísticas Button - Solo para Administradores */}
+          {isAdmin && (
+            <TouchableOpacity 
+              style={styles.statsButton}
+              onPress={handleStatistics}
+            >
+              <Text style={styles.statsButtonText}>Estadísticas</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </LinearGradient>
     </SafeAreaView>
@@ -188,5 +210,16 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: 'bold',
     color: Colors.text.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FF6B9D',
+  },
+  loadingText: {
+    fontSize: FontSizes.lg,
+    color: 'white',
+    fontWeight: 'bold',
   },
 });

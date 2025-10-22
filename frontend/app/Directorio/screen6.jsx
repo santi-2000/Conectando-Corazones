@@ -42,8 +42,7 @@ export default function DirectorioApoyo() {
   };
 
   const handleProfile = () => {
-    // Navegar al perfil
-    console.log('Navegando al perfil');
+    router.push('/Usuario/screen17');
   };
 
   const handleImageError = () => {

@@ -34,6 +34,10 @@ export default function LoginScreen() {
     console.log('Crear cuenta');
   };
 
+  const handleProfile = () => {
+    router.push('/Usuario/screen17');
+  };
+
 
   return (
     <SafeAreaView style={styles.container}>
