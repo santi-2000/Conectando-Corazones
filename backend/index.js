@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -26,6 +27,9 @@ app.use(cors({
 
 // Compresión
 app.use(compression());
+
+// Servir archivos estáticos (PDFs)
+app.use('/pdfs', express.static('public/pdfs'));
 
 // Logging
 app.use(morgan('combined'));
@@ -74,10 +78,16 @@ app.get('/', (req, res) => {
 // Importar módulos
 const SupportDirectoryModule = require('./src/modules/SupportDirectoryModule');
 const EducationalBookModule = require('./src/modules/EducationalBookModule');
+const ChildrenReadingsModule = require('./src/modules/ChildrenReadingsModule');
+const MomsWeekModule = require('./src/modules/MomsWeekModule');
+const DiaryModule = require('./src/modules/DiaryModule');
 
 // Crear instancias de módulos
 const supportDirectoryModule = new SupportDirectoryModule();
 const educationalBookModule = new EducationalBookModule();
+const childrenReadingsModule = new ChildrenReadingsModule();
+const momsWeekModule = new MomsWeekModule();
+const diaryModule = new DiaryModule();
 
 // Importar rutas de la API (rutas originales)
 // app.use('/api/v1/auth', require('./routes/auth'));
@@ -92,6 +102,9 @@ const educationalBookModule = new EducationalBookModule();
 // Usar módulos nuevos
 app.use('/api/v1', supportDirectoryModule.getRouter());
 app.use('/api/v1', educationalBookModule.getRouter());
+app.use('/api/v1', childrenReadingsModule.getRouter());
+app.use('/api/v1', momsWeekModule.getRouter());
+app.use('/api/v1', diaryModule.getRouter());
 
 
 // 404 - Ruta no encontrada
