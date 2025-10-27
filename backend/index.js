@@ -81,6 +81,7 @@ const EducationalBookModule = require('./src/modules/EducationalBookModule');
 const ChildrenReadingsModule = require('./src/modules/ChildrenReadingsModule');
 const MomsWeekModule = require('./src/modules/MomsWeekModule');
 const DiaryModule = require('./src/modules/DiaryModule');
+const CalendarModule = require('./src/modules/CalendarModule');
 
 // Crear instancias de módulos
 const supportDirectoryModule = new SupportDirectoryModule();
@@ -88,6 +89,7 @@ const educationalBookModule = new EducationalBookModule();
 const childrenReadingsModule = new ChildrenReadingsModule();
 const momsWeekModule = new MomsWeekModule();
 const diaryModule = new DiaryModule();
+const calendarModule = new CalendarModule();
 
 // Importar rutas de la API (rutas originales)
 // app.use('/api/v1/auth', require('./routes/auth'));
@@ -105,6 +107,7 @@ app.use('/api/v1', educationalBookModule.getRouter());
 app.use('/api/v1', childrenReadingsModule.getRouter());
 app.use('/api/v1', momsWeekModule.getRouter());
 app.use('/api/v1', diaryModule.getRouter());
+app.use('/api/v1', calendarModule.getRouter());
 
 
 // 404 - Ruta no encontrada
