@@ -1,3 +1,5 @@
+//pantalla de libros educativos nivel primario y secundario
+
 /**
  * @class EducationalBookModule
  * @description Encapsula la lógica y las rutas relacionadas con los libros educativos.

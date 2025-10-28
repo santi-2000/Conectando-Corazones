@@ -1,3 +1,5 @@
+//pantalla de biblioteca virtual, libros infantiles 
+
 /**
  * Módulo de Lecturas Infantiles
  * Orquesta todos los componentes del módulo
