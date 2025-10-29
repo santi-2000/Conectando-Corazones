@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,17 +7,57 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Image
+  Image,
+  Alert,
+  Linking
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../../../components/Button';
 import { Colors } from '../../../constants/colors';
 import { FontSizes, Spacing } from '../../../constants/dimensions';
+import { useDiary } from '../../../Hooks/useDiary';
+import { useMomsWeek } from '../../../Hooks/useMomsWeek';
 
 export default function VistaPdf() {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+  
+  // Hooks para Diario y Moms Week
+  const { 
+    entries, 
+    stats, 
+    loading: diaryLoading, 
+    error: diaryError, 
+    fetchEntries,
+    generatePDF 
+  } = useDiary('test_review');
+  
+  const { 
+    currentWeek, 
+    loading: weekLoading, 
+    error: weekError, 
+    fetchCurrentWeek 
+  } = useMomsWeek('test_review');
+
+  // Cargar datos al montar el componente
+  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+  // useEffect(() => {
+  //   console.log('🔄 Cargando datos de Diario y Moms Week...');
+  //   fetchCurrentWeek();
+  //   fetchEntries();
+  // }, []);
+
+  // Recargar datos cuando el componente se enfoque (cuando regrese de agregar entrada)
+  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     console.log('🔄 Pantalla enfocada, recargando datos...');
+  //     fetchCurrentWeek();
+  //     fetchEntries();
+  //   }, []) // Remover dependencias para evitar bucle infinito
+  // );
 
   const handleBack = () => {
     router.back();
@@ -27,9 +67,31 @@ export default function VistaPdf() {
     console.log('Navegando al perfil');
   };
 
-  const handleGenerarPDF = () => {
-    console.log('Generar PDF real');
-    // Aquí iría la lógica para generar el PDF real
+  const handleGenerarPDF = async () => {
+    try {
+      console.log('🔄 Generando PDF real...');
+      const result = await generatePDF();
+      console.log('✅ PDF generado:', result);
+      
+      if (result?.success && result?.data?.pdfUrl) {
+        const pdfUrl = `http://192.168.0.22:3000${result.data.pdfUrl}`;
+        console.log('📄 PDF URL:', pdfUrl);
+        
+        Alert.alert(
+          'PDF Generado Exitosamente', 
+          'Tu libro semanal ha sido generado. ¿Quieres verlo ahora?',
+          [
+            { text: 'Ver PDF', onPress: () => Linking.openURL(pdfUrl) },
+            { text: 'Más tarde', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'No se pudo obtener la URL del PDF generado.');
+      }
+    } catch (error) {
+      console.error('❌ Error al generar PDF:', error);
+      Alert.alert('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.');
+    }
   };
 
   const handleEditarDia = (dayNumber) => {
@@ -43,35 +105,82 @@ export default function VistaPdf() {
     setImageError(true);
   };
 
+  // Función para calcular la semana actual del año
+  const getCurrentWeekNumber = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now - start) / (24 * 60 * 60 * 1000));
+    return Math.ceil((days + start.getDay() + 1) / 7);
+  };
+
+  // Función para obtener el rango de fechas de la semana actual
+  const getCurrentWeekRange = () => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - currentDay + 1);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    
+    const formatDate = (date) => {
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      return `${day} de ${getMonthName(date)}`;
+    };
+    
+    return `${formatDate(monday)} - ${formatDate(sunday)}`;
+  };
+
+  const getMonthName = (date) => {
+    const months = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    return months[date.getMonth()];
+  };
+
+  // Calcular semana actual
+  const currentWeekNumber = getCurrentWeekNumber();
+  const currentWeekRange = getCurrentWeekRange();
+
+  // Usar datos del backend o valores por defecto
   const weekData = {
-    weekNumber: 42,
-    dateRange: '7-13 de octubre',
+    weekNumber: currentWeekNumber,
+    dateRange: currentWeekRange,
     childName: 'Sofia',
     momName: 'Mamá',
-    days: [
+    days: entries && entries.length > 0 ? entries.map(entry => ({
+      day: entry.fecha ? new Date(entry.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }) : 'Día',
+      emotion: entry.emocion || null,
+      emotionName: entry.emocion || null,
+      photo: entry.fotos && entry.fotos.length > 0 ? '📸' : null,
+      text: entry.contenido || entry.titulo || 'Día completado',
+      highlights: entry.tags || []
+    })) : [
       {
         day: 'Lunes 7 Oct',
-        emotion: '😊',
-        emotionName: 'Feliz',
-        photo: '📸',
-        text: 'Hoy jugué con mis amigos en el parque y me divertí mucho. Mamá me ayudó a hacer la tarea y me sentí muy orgullosa.',
-        highlights: ['Jugué en el parque', 'Mamá me ayudó con la tarea', 'Me sentí orgullosa']
+        emotion: null,
+        emotionName: null,
+        photo: null,
+        text: 'Día pendiente',
+        highlights: []
       },
       {
         day: 'Martes 8 Oct',
-        emotion: '🤩',
-        emotionName: 'Emocionada',
-        photo: '📸',
-        text: 'Fui al colegio y aprendí cosas nuevas. Cuando llegué a casa, mamá me abrazó y me preguntó cómo me había ido.',
-        highlights: ['Aprendí cosas nuevas', 'Mamá me abrazó', 'Me preguntó cómo me fue']
+        emotion: null,
+        emotionName: null,
+        photo: null,
+        text: 'Día pendiente',
+        highlights: []
       },
       {
         day: 'Miércoles 9 Oct',
-        emotion: '😌',
-        emotionName: 'Tranquila',
-        photo: '📸',
-        text: 'Hoy fue un día tranquilo. Mamá y yo leímos un cuento juntas antes de dormir. Me encanta cuando leemos juntas.',
-        highlights: ['Día tranquilo', 'Leímos un cuento', 'Me encanta leer con mamá']
+        emotion: null,
+        emotionName: null,
+        photo: null,
+        text: 'Día pendiente',
+        highlights: []
       },
       {
         day: 'Jueves 10 Oct',
@@ -110,6 +219,48 @@ export default function VistaPdf() {
 
   const completedDays = weekData.days.filter(day => day.emotion !== null).length;
   const totalDays = weekData.days.length;
+
+  // Mostrar loading
+  if (diaryLoading || weekLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Cargando tu diario...</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar error
+  if (diaryError || weekError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Error: {diaryError || weekError}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => {
+              // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+              // fetchCurrentWeek();
+              // fetchEntries();
+              console.log('Botón reintentar deshabilitado temporalmente');
+            }}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -623,6 +774,45 @@ const styles = StyleSheet.create({
   addDayButtonText: {
     color: 'white',
     fontSize: FontSizes.md,
+    fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  loadingText: {
+    fontSize: FontSizes.lg,
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  errorText: {
+    fontSize: FontSizes.md,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  retryButton: {
+    backgroundColor: 'white',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  retryButtonText: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
     fontWeight: 'bold',
   },
 });

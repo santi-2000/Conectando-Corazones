@@ -18,7 +18,6 @@ router.get('/:userId/daily/:date',
 
 // Crear o actualizar entrada del día
 router.post('/:userId/daily-entry',
-  handleValidationErrors,
   diaryController.saveDailyEntry.bind(diaryController)
 );
 
@@ -44,6 +43,38 @@ router.delete('/:userId/daily/:date',
 router.get('/:userId/stats',
   handleValidationErrors,
   diaryController.getUserStats.bind(diaryController)
+);
+
+// Ruta de prueba simple
+router.get('/:userId/test-pdf', (req, res) => {
+  console.log('🔍 Ruta test-pdf llamada:', req.params);
+  res.json({ success: true, message: 'Ruta test-pdf funciona', params: req.params });
+});
+
+// Generar PDF del diario
+router.post('/:userId/generate-pdf', (req, res) => {
+  console.log('🔍 Ruta generate-pdf llamada:', req.params);
+  diaryController.generatePDF(req, res);
+});
+
+// Obtener entrada específica por ID para editar
+router.get('/:userId/entries/:entryId',
+  diaryController.getEntryById.bind(diaryController)
+);
+
+// Actualizar entrada específica por ID
+router.put('/:userId/entries/:entryId',
+  diaryController.updateEntry.bind(diaryController)
+);
+
+// Eliminar entrada específica por ID
+router.delete('/:userId/entries/:entryId',
+  diaryController.deleteEntry.bind(diaryController)
+);
+
+// Obtener días de la semana con estado (completado/pendiente)
+router.get('/:userId/weekly-days',
+  diaryController.getWeeklyDays.bind(diaryController)
 );
 
 module.exports = router;

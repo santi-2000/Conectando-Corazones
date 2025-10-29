@@ -7,13 +7,15 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Image
+  Image,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../../components/Button';
 import { Colors } from '../../constants/colors';
 import { FontSizes, Spacing } from '../../constants/dimensions';
+import { useCalendar } from '../../Hooks/useCalendar';
 
 export default function Calendario() {
   const router = useRouter();
@@ -21,6 +23,14 @@ export default function Calendario() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDebug, setShowDebug] = useState(true);
+
+  // Hook para Calendario
+  const { 
+    events, 
+    loading, 
+    error, 
+    fetchEvents 
+  } = useCalendar('test_review');
 
   console.log('Calendario component loaded');
 
@@ -30,6 +40,12 @@ export default function Calendario() {
     }, 3000);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Cargar eventos al montar el componente
+  useEffect(() => {
+    console.log('🔄 Cargando eventos del calendario...');
+    fetchEvents();
   }, []); 
 
   const handleBack = () => {
@@ -66,8 +82,24 @@ export default function Calendario() {
     setCurrentMonth(newMonth);
   };
 
-  // Datos de eventos simulados
-  const events = {
+  // Convertir eventos del backend a formato del calendario
+  const eventsMap = {};
+  if (events && events.length > 0) {
+    events.forEach(event => {
+      const dateKey = event.fecha_inicio ? event.fecha_inicio.split('T')[0] : '';
+      if (dateKey) {
+        eventsMap[dateKey] = {
+          type: event.tipo_evento || 'diferente',
+          color: event.color || '#4A90E2',
+          title: event.titulo || 'Evento',
+          id: event.id
+        };
+      }
+    });
+  }
+
+  // Datos de eventos simulados como fallback
+  const fallbackEvents = {
     '2024-06-04': { type: 'familiar', color: '#FFD700', title: 'Cumpleaños de mamá' },
     '2024-06-06': { type: 'familiar', color: '#FFD700', title: 'Día familiar' },
     '2024-06-10': { type: 'recordatorio', color: '#4A90E2', title: 'Cita médica' },
@@ -81,6 +113,9 @@ export default function Calendario() {
     '2024-06-23': { type: 'diferente', color: '#FF69B4', title: 'Evento cultural' },
     '2024-06-26': { type: 'recordatorio', color: '#4A90E2', title: 'Reunión importante' }
   };
+
+  // Usar eventos del backend o fallback
+  const calendarEvents = Object.keys(eventsMap).length > 0 ? eventsMap : fallbackEvents;
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -123,6 +158,43 @@ export default function Calendario() {
   };
 
   const days = getDaysInMonth(currentMonth);
+
+  // Mostrar loading
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Cargando calendario...</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar error
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Error: {error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchEvents}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -222,7 +294,7 @@ export default function Calendario() {
                 }
 
                 const dateKey = formatDateKey(day);
-                const event = events[dateKey];
+                const event = calendarEvents[dateKey];
                 const isSelected = selectedDate === day;
                 const isToday = new Date().getDate() === day && 
                                new Date().getMonth() === currentMonth.getMonth() && 
@@ -534,5 +606,44 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  loadingText: {
+    fontSize: FontSizes.lg,
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  errorText: {
+    fontSize: FontSizes.md,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  retryButton: {
+    backgroundColor: 'white',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  retryButtonText: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
+    fontWeight: 'bold',
   },
 });

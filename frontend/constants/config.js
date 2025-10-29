@@ -1,7 +1,7 @@
 // Configuración de la aplicación
 export const CONFIG = {
   // URL base del backend - Se detecta automáticamente
-  API_BASE_URL: process.env.REACT_NATIVE_API_URL || 'http://localhost:3000/api/v1',
+  API_BASE_URL: 'http://192.168.0.22:3000/api/v1',
   
   // Configuración de la aplicación
   APP_NAME: 'Conectando Corazones',
@@ -11,7 +11,7 @@ export const CONFIG = {
   DEBUG: true,
   
   // Timeouts
-  REQUEST_TIMEOUT: 10000, // 10 segundos
+  REQUEST_TIMEOUT: 30000, // 30 segundos
   
   // Configuración de autenticación
   TOKEN_KEY: 'auth_token',

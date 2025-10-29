@@ -1,91 +1,92 @@
-import apiClient, { API_ENDPOINTS } from '../apiClient';
+import apiClient from '../apiClient';
 
-/**
- * Servicio para manejar Moms Week
- */
-class MomsWeekService {
+export const momsWeekService = {
   /**
-   * Obtener semana actual del usuario
+   * Obtener semana actual
+   * @param {string} userId - ID del usuario
+   * @returns {Promise<Object>}
    */
   async getCurrentWeek(userId) {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.MOMS_WEEK.CURRENT_WEEK}/${userId}/current-week`);
-      return response.data;
+      console.log('🔍 momsWeekService.getCurrentWeek: Iniciando petición...');
+      const response = await apiClient.get(`/moms-week/${userId}/current-week`);
+      console.log('✅ momsWeekService.getCurrentWeek: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener semana actual:', error);
-      throw error;
+      console.error('❌ momsWeekService.getCurrentWeek: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener semana actual');
     }
-  }
+  },
 
   /**
-   * Generar libro semanal
+   * Obtener estadísticas de la semana
+   * @param {string} userId - ID del usuario
+   * @param {string} weekId - ID de la semana
+   * @returns {Promise<Object>}
    */
-  async generateWeeklyBook(userId, bookData) {
+  async getWeekStats(userId, weekId) {
     try {
-      const response = await apiClient.post(
-        `${API_ENDPOINTS.MOMS_WEEK.GENERATE_BOOK}/${userId}/generate-book`,
-        bookData
-      );
-      return response.data;
+      console.log('🔍 momsWeekService.getWeekStats: Iniciando petición...');
+      const response = await apiClient.get(`/moms-week/${userId}/stats/${weekId}`);
+      console.log('✅ momsWeekService.getWeekStats: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al generar libro semanal:', error);
-      throw error;
+      console.error('❌ momsWeekService.getWeekStats: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener estadísticas de la semana');
     }
-  }
+  },
 
   /**
    * Obtener historial de semanas
+   * @param {string} userId - ID del usuario
+   * @param {Object} filters - Filtros de búsqueda
+   * @returns {Promise<Object>}
    */
   async getWeekHistory(userId, filters = {}) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.page) queryParams.append('page', filters.page);
-      if (filters.limit) queryParams.append('limit', filters.limit);
-      if (filters.year) queryParams.append('year', filters.year);
-
-      const endpoint = `${API_ENDPOINTS.MOMS_WEEK.HISTORY}/${userId}/history${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
+      console.log('🔍 momsWeekService.getWeekHistory: Iniciando petición...');
+      const response = await apiClient.get(`/moms-week/${userId}/history`, { params: filters });
+      console.log('✅ momsWeekService.getWeekHistory: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener historial de semanas:', error);
-      throw error;
+      console.error('❌ momsWeekService.getWeekHistory: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener historial de semanas');
     }
-  }
+  },
 
   /**
-   * Obtener estadísticas de semanas
+   * Crear nueva semana
+   * @param {string} userId - ID del usuario
+   * @param {Object} weekData - Datos de la semana
+   * @returns {Promise<Object>}
    */
-  async getWeekStats(userId, filters = {}) {
+  async createWeek(userId, weekData) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.year) queryParams.append('year', filters.year);
-      if (filters.month) queryParams.append('month', filters.month);
-
-      const endpoint = `${API_ENDPOINTS.MOMS_WEEK.STATS}/${userId}/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
+      console.log('🔍 momsWeekService.createWeek: Iniciando petición...');
+      const response = await apiClient.post(`/moms-week/${userId}/create`, weekData);
+      console.log('✅ momsWeekService.createWeek: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener estadísticas de semanas:', error);
-      throw error;
+      console.error('❌ momsWeekService.createWeek: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al crear nueva semana');
     }
-  }
+  },
 
   /**
-   * Obtener semana específica
+   * Generar libro semanal
+   * @param {string} userId - ID del usuario
+   * @param {string} weekId - ID de la semana
+   * @returns {Promise<Object>}
    */
-  async getWeekById(userId, weekId) {
+  async generateWeeklyBook(userId, weekId) {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.MOMS_WEEK.HISTORY}/${userId}/weeks/${weekId}`);
-      return response.data;
+      console.log('🔍 momsWeekService.generateWeeklyBook: Iniciando petición...');
+      const response = await apiClient.post(`/moms-week/${userId}/generate-book/${weekId}`);
+      console.log('✅ momsWeekService.generateWeeklyBook: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener semana:', error);
-      throw error;
+      console.error('❌ momsWeekService.generateWeeklyBook: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al generar libro semanal');
     }
   }
-}
-
-export default new MomsWeekService();
+};

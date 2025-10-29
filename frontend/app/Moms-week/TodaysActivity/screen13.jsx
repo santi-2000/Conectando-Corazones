@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,19 +8,34 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import Button from '../../../components/Button';
 import { Colors } from '../../../constants/colors';
 import { FontSizes, Spacing } from '../../../constants/dimensions';
+import { useDiary } from '../../../Hooks/useDiary';
 
 export default function TodaysActivity() {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [text, setText] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Hook para el diario
+  const {
+    entries,
+    stats,
+    loading: diaryLoading,
+    error: diaryError,
+    fetchEntries,
+    createEntry
+  } = useDiary('test_review');
 
   const handleBack = () => {
     router.back();
@@ -30,14 +45,164 @@ export default function TodaysActivity() {
     console.log('Navegando al perfil');
   };
 
-  const handleAddPhoto = () => {
-    console.log('Agregar foto');
-    // Aquí iría la lógica para seleccionar foto
+  // Cargar entradas al montar el componente
+  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+  // useEffect(() => {
+  //   console.log('🔄 Cargando entradas del diario...');
+  //   fetchEntries();
+  // }, []);
+
+  const handleAddPhoto = async () => {
+    try {
+      // Solicitar permisos
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permisos necesarios', 'Necesitamos acceso a tu galería para agregar fotos');
+        return;
+      }
+
+      // Mostrar opciones
+      Alert.alert(
+        'Seleccionar foto',
+        '¿De dónde quieres tomar la foto?',
+        [
+          {
+            text: 'Galería',
+            onPress: () => pickImageFromGallery()
+          },
+          {
+            text: 'Cámara',
+            onPress: () => takePhotoWithCamera()
+          },
+          {
+            text: 'Cancelar',
+            style: 'cancel'
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error al solicitar permisos:', error);
+      Alert.alert('Error', 'No se pudieron solicitar los permisos');
+    }
   };
 
-  const handleSaveDay = () => {
-    console.log('Guardar día');
-    // Aquí iría la lógica para guardar la entrada
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const newPhoto = result.assets[0].uri;
+        setPhotos(prev => [...prev, newPhoto]);
+        Alert.alert('¡Foto agregada!', 'Se ha agregado una foto de tu galería');
+      }
+    } catch (error) {
+      console.error('Error al seleccionar foto:', error);
+      Alert.alert('Error', 'No se pudo seleccionar la foto');
+    }
+  };
+
+  const takePhotoWithCamera = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permisos necesarios', 'Necesitamos acceso a tu cámara para tomar fotos');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const newPhoto = result.assets[0].uri;
+        setPhotos(prev => [...prev, newPhoto]);
+        Alert.alert('¡Foto tomada!', 'Se ha agregado una foto de tu cámara');
+      }
+    } catch (error) {
+      console.error('Error al tomar foto:', error);
+      Alert.alert('Error', 'No se pudo tomar la foto');
+    }
+  };
+
+  const handleSaveDay = async () => {
+    if (!selectedEmotion || !text.trim()) {
+      Alert.alert('Campos requeridos', 'Por favor selecciona una emoción y escribe algo sobre tu día');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Verificar si ya existe una entrada para hoy
+    const existingEntry = entries.find(entry => {
+      const entryDate = entry.fecha ? entry.fecha.split('T')[0] : null;
+      return entryDate === today;
+    });
+
+    if (existingEntry) {
+      Alert.alert(
+        'Día ya completado', 
+        'Ya tienes una entrada para hoy. ¿Quieres editarla?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Editar', onPress: () => {
+            // Aquí podrías navegar a una pantalla de edición
+            console.log('Editando entrada existente:', existingEntry.id);
+          }}
+        ]
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const emotionData = emotions.find(e => e.id === selectedEmotion);
+      
+      const entryData = {
+        fecha: today,
+        titulo: `Mi día ${new Date().toLocaleDateString('es-ES')}`,
+        contenido: text,
+        fotos: photos,
+        emocion: emotionData.name,
+        emocion_emoji: emotionData.emoji,
+        tags: [`${emotionData.name}`, 'día especial']
+      };
+
+      console.log('💾 Guardando entrada:', entryData);
+      const result = await createEntry(entryData);
+      
+      Alert.alert(
+        '¡Día guardado!', 
+        'Tu entrada se ha guardado exitosamente. ¡Mamá estará muy feliz de leerla!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Limpiar formulario
+              setText('');
+              setSelectedEmotion(null);
+              setPhotos([]);
+              // Recargar datos para actualizar la vista
+              // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+              // fetchEntries();
+              // Regresar a la pantalla anterior
+              router.back();
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('❌ Error al guardar:', error);
+      Alert.alert('Error', 'No se pudo guardar tu entrada. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImageError = () => {
@@ -53,16 +218,35 @@ export default function TodaysActivity() {
     { id: 'grateful', emoji: '🙏', color: '#F0E68C', name: 'Agradecido', sparkle: '💝' }
   ];
 
-  // Progreso semanal (simulado)
-  const weeklyProgress = [
-    { day: 'Lun', completed: true, star: '⭐' },
-    { day: 'Mar', completed: true, star: '⭐' },
-    { day: 'Mié', completed: true, star: '⭐' },
-    { day: 'Jue', completed: false, star: '☆' },
-    { day: 'Vie', completed: false, star: '☆' },
-    { day: 'Sáb', completed: false, star: '☆' },
-    { day: 'Dom', completed: false, star: '☆' }
-  ];
+  // Calcular progreso semanal basado en las entradas reales
+  const getWeeklyProgress = () => {
+    const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+    
+    // Ajustar para que la semana empiece en lunes
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    
+    return days.map((dayName, index) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + index);
+      const dateString = dayDate.toISOString().split('T')[0];
+      
+      // Verificar si hay una entrada para este día
+      const hasEntry = entries && entries.some(entry => entry.fecha === dateString);
+      
+      return {
+        day: dayName,
+        completed: hasEntry,
+        star: hasEntry ? '⭐' : '☆',
+        date: dateString
+      };
+    });
+  };
+
+  const weeklyProgress = getWeeklyProgress();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -130,13 +314,35 @@ export default function TodaysActivity() {
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.mainCard}>
             {/* Photo Section */}
-            <TouchableOpacity style={styles.photoSection} onPress={handleAddPhoto}>
-              <View style={styles.cameraIcon}>
-                <Text style={styles.cameraEmoji}>📷</Text>
-              </View>
-              <Text style={styles.photoText}>¡Toca aquí para agregar una foto!</Text>
-              <Text style={styles.photoSubtext}>📸 Comparte un momento especial</Text>
-            </TouchableOpacity>
+            <View style={styles.photoSection}>
+              <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
+                <View style={styles.cameraIcon}>
+                  <Text style={styles.cameraEmoji}>📷</Text>
+                </View>
+                <Text style={styles.photoText}>¡Toca aquí para agregar una foto!</Text>
+                <Text style={styles.photoSubtext}>📸 Comparte un momento especial</Text>
+              </TouchableOpacity>
+              
+              {/* Mostrar fotos seleccionadas */}
+              {photos.length > 0 && (
+                <View style={styles.selectedPhotosContainer}>
+                  <Text style={styles.selectedPhotosTitle}>Fotos seleccionadas ({photos.length}):</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosScroll}>
+                    {photos.map((photo, index) => (
+                      <View key={index} style={styles.photoItem}>
+                        <Image source={{ uri: photo }} style={styles.selectedPhoto} />
+                        <TouchableOpacity 
+                          style={styles.removePhotoButton}
+                          onPress={() => setPhotos(prev => prev.filter((_, i) => i !== index))}
+                        >
+                          <Text style={styles.removePhotoText}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
 
             {/* Text Section */}
             <View style={styles.textSection}>
@@ -183,10 +389,11 @@ export default function TodaysActivity() {
 
             {/* Save Button */}
             <Button
-              title="💾 ¡Guardar mi día!"
+              title={loading ? "💾 Guardando..." : "💾 ¡Guardar mi día!"}
               onPress={handleSaveDay}
               variant="primary"
-              style={styles.saveButton}
+              style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+              disabled={loading}
             />
           </View>
         </ScrollView>
@@ -351,6 +558,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   photoSection: {
+    marginBottom: Spacing.xl,
+  },
+  addPhotoButton: {
     height: 140,
     borderWidth: 3,
     borderColor: '#FF6B9D',
@@ -358,13 +568,51 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
     backgroundColor: '#FFF0F5',
     shadowColor: '#FF6B9D',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+  selectedPhotosContainer: {
+    marginTop: Spacing.md,
+  },
+  selectedPhotosTitle: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
+    fontWeight: 'bold',
+    marginBottom: Spacing.sm,
+  },
+  photosScroll: {
+    maxHeight: 100,
+  },
+  photoItem: {
+    position: 'relative',
+    marginRight: Spacing.sm,
+  },
+  selectedPhoto: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#FF6B9D',
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removePhotoText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   cameraIcon: {
     marginBottom: Spacing.sm,
@@ -472,5 +720,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#CCC',
+    shadowOpacity: 0.1,
   },
 });

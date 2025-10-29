@@ -1,4 +1,5 @@
 import { CONFIG, API_ENDPOINTS } from '../constants/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Cliente HTTP para comunicarse con el backend
@@ -16,9 +17,9 @@ class ApiClient {
   /**
    * Obtiene el token de autenticación del almacenamiento local
    */
-  getAuthToken() {
+  async getAuthToken() {
     try {
-      return localStorage.getItem(CONFIG.TOKEN_KEY);
+      return await AsyncStorage.getItem(CONFIG.TOKEN_KEY);
     } catch (error) {
       console.warn('No se pudo obtener el token de autenticación:', error);
       return null;
@@ -28,8 +29,8 @@ class ApiClient {
   /**
    * Obtiene los headers de autenticación
    */
-  getAuthHeaders() {
-    const token = this.getAuthToken();
+  async getAuthHeaders() {
+    const token = await this.getAuthToken();
     if (token) {
       return {
         ...this.defaultHeaders,
@@ -77,10 +78,10 @@ class ApiClient {
   /**
    * Limpia los datos de autenticación
    */
-  clearAuth() {
+  async clearAuth() {
     try {
-      localStorage.removeItem(CONFIG.TOKEN_KEY);
-      localStorage.removeItem(CONFIG.USER_KEY);
+      await AsyncStorage.removeItem(CONFIG.TOKEN_KEY);
+      await AsyncStorage.removeItem(CONFIG.USER_KEY);
     } catch (error) {
       console.warn('No se pudieron limpiar los datos de autenticación:', error);
     }
@@ -99,7 +100,7 @@ class ApiClient {
     } = options;
 
     const url = `${this.baseURL}${endpoint}`;
-    const requestHeaders = requireAuth ? this.getAuthHeaders() : this.defaultHeaders;
+    const requestHeaders = requireAuth ? await this.getAuthHeaders() : this.defaultHeaders;
 
     const config = {
       method,

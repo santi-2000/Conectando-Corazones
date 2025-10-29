@@ -1,34 +1,50 @@
-import apiClient, { API_ENDPOINTS } from '../apiClient';
+import apiClient from '../apiClient';
 
-/**
- * Servicio para manejar información de FAFORE
- */
-class FaforeService {
+export const faforeService = {
   /**
    * Obtener información de FAFORE
+   * @returns {Promise<Object>}
    */
   async getInfo() {
     try {
-      const response = await apiClient.get(API_ENDPOINTS.FAFORE.INFO);
-      return response.data;
+      console.log('🔍 faforeService.getInfo: Iniciando petición...');
+      const response = await apiClient.get('/fafore/info');
+      console.log('✅ faforeService.getInfo: Respuesta recibida:', response);
+      console.log('📊 faforeService.getInfo: response.data:', response.data);
+      // La respuesta ya es el objeto completo, no necesita .data
+      return response;
     } catch (error) {
-      console.error('Error al obtener información de FAFORE:', error);
-      throw error;
+      console.error('❌ faforeService.getInfo: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener información de FAFORE');
     }
-  }
+  },
 
   /**
-   * Obtener servicios de FAFORE
+   * Actualizar información de FAFORE
+   * @param {Object} data - Datos a actualizar
+   * @returns {Promise<Object>}
    */
-  async getServices() {
+  async updateInfo(data) {
     try {
-      const response = await apiClient.get(API_ENDPOINTS.FAFORE.SERVICES);
+      const response = await apiClient.put('/fafore/info', data);
       return response.data;
     } catch (error) {
-      console.error('Error al obtener servicios de FAFORE:', error);
-      throw error;
+      console.error('Error en faforeService.updateInfo:', error);
+      throw new Error(error.response?.data?.message || 'Error al actualizar información de FAFORE');
     }
-  }
-}
+  },
 
-export default new FaforeService();
+  /**
+   * Obtener estadísticas de FAFORE
+   * @returns {Promise<Object>}
+   */
+  async getStats() {
+    try {
+      const response = await apiClient.get('/fafore/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error en faforeService.getStats:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener estadísticas de FAFORE');
+    }
+  },
+};

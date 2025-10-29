@@ -1,124 +1,138 @@
-import { useState, useEffect, useCallback } from 'react';
-import { momsWeekService } from '../proxy/services';
+import { useState, useEffect } from 'react';
+import { momsWeekService } from '../proxy/services/momsWeekService';
 
-/**
- * Hook para manejar Moms Week
- */
-export const useMomsWeek = (userId) => {
+export const useMomsWeek = (userId = 'test_review') => {
   const [currentWeek, setCurrentWeek] = useState(null);
-  const [weekHistory, setWeekHistory] = useState([]);
   const [weekStats, setWeekStats] = useState(null);
+  const [weekHistory, setWeekHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cargar semana actual cuando cambie el userId
-  useEffect(() => {
-    if (userId) {
-      loadCurrentWeek();
+  const fetchCurrentWeek = async () => {
+    // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+    console.log('🔄 useMomsWeek: fetchCurrentWeek DESHABILITADO temporalmente');
+    return;
+    
+    // Evitar múltiples llamadas simultáneas
+    if (loading) {
+      console.log('🔄 useMomsWeek: Ya hay una petición en curso, saltando...');
+      return;
     }
-  }, [userId]);
-
-  const loadCurrentWeek = useCallback(async () => {
-    if (!userId) return;
     
     try {
+      console.log('🔄 useMomsWeek: Iniciando fetchCurrentWeek...');
       setLoading(true);
       setError(null);
-      
-      const result = await momsWeekService.getCurrentWeek(userId);
-      setCurrentWeek(result);
+      const response = await momsWeekService.getCurrentWeek(userId);
+      console.log('✅ useMomsWeek: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useMomsWeek: Datos a guardar:', data);
+      setCurrentWeek(data);
+      console.log('✅ useMomsWeek: currentWeek actualizado');
     } catch (err) {
-      setError(err.message);
+      console.error('❌ useMomsWeek: Error:', err);
+      setError(err.message || 'Error al cargar semana actual');
     } finally {
       setLoading(false);
+      console.log('🔄 useMomsWeek: Loading terminado');
     }
-  }, [userId]);
+  };
 
-  const generateWeeklyBook = useCallback(async (bookData) => {
-    if (!userId) return;
-    
+  const fetchWeekStats = async (weekId) => {
     try {
+      console.log('🔄 useMomsWeek: Iniciando fetchWeekStats...');
       setLoading(true);
       setError(null);
-      
-      const result = await momsWeekService.generateWeeklyBook(userId, bookData);
-      
-      // Recargar semana actual después de generar libro
-      await loadCurrentWeek();
-      
-      return result;
+      const response = await momsWeekService.getWeekStats(userId, weekId);
+      console.log('✅ useMomsWeek: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useMomsWeek: Datos a guardar:', data);
+      setWeekStats(data);
+      console.log('✅ useMomsWeek: weekStats actualizado');
     } catch (err) {
-      setError(err.message);
+      console.error('❌ useMomsWeek: Error:', err);
+      setError(err.message || 'Error al cargar estadísticas de la semana');
+    } finally {
+      setLoading(false);
+      console.log('🔄 useMomsWeek: Loading terminado');
+    }
+  };
+
+  const fetchWeekHistory = async (filters = {}) => {
+    try {
+      console.log('🔄 useMomsWeek: Iniciando fetchWeekHistory...');
+      setLoading(true);
+      setError(null);
+      const response = await momsWeekService.getWeekHistory(userId, filters);
+      console.log('✅ useMomsWeek: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useMomsWeek: Datos a guardar:', data);
+      setWeekHistory(Array.isArray(data) ? data : []);
+      console.log('✅ useMomsWeek: weekHistory actualizado');
+    } catch (err) {
+      console.error('❌ useMomsWeek: Error:', err);
+      setError(err.message || 'Error al cargar historial de semanas');
+    } finally {
+      setLoading(false);
+      console.log('🔄 useMomsWeek: Loading terminado');
+    }
+  };
+
+  const createWeek = async (weekData) => {
+    try {
+      console.log('🔄 useMomsWeek: Iniciando createWeek...');
+      setLoading(true);
+      setError(null);
+      const response = await momsWeekService.createWeek(userId, weekData);
+      console.log('✅ useMomsWeek: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useMomsWeek: Datos a guardar:', data);
+      // Actualizar la semana actual después de crear
+      // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+      // await fetchCurrentWeek();
+      console.log('✅ useMomsWeek: createWeek completado');
+      return data;
+    } catch (err) {
+      console.error('❌ useMomsWeek: Error:', err);
+      setError(err.message || 'Error al crear nueva semana');
       throw err;
     } finally {
       setLoading(false);
+      console.log('🔄 useMomsWeek: Loading terminado');
     }
-  }, [userId, loadCurrentWeek]);
+  };
 
-  const loadWeekHistory = useCallback(async (filters = {}) => {
-    if (!userId) return;
-    
+  const generateWeeklyBook = async (weekId) => {
     try {
+      console.log('🔄 useMomsWeek: Iniciando generateWeeklyBook...');
       setLoading(true);
       setError(null);
-      
-      const result = await momsWeekService.getWeekHistory(userId, filters);
-      setWeekHistory(result.weeks || []);
-      
-      return result;
+      const response = await momsWeekService.generateWeeklyBook(userId, weekId);
+      console.log('✅ useMomsWeek: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useMomsWeek: Datos a guardar:', data);
+      console.log('✅ useMomsWeek: generateWeeklyBook completado');
+      return data;
     } catch (err) {
-      setError(err.message);
-      setWeekHistory([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  const loadWeekStats = useCallback(async (filters = {}) => {
-    if (!userId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await momsWeekService.getWeekStats(userId, filters);
-      setWeekStats(result);
-      
-      return result;
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  const getWeekById = useCallback(async (weekId) => {
-    if (!userId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await momsWeekService.getWeekById(userId, weekId);
-      return result;
-    } catch (err) {
-      setError(err.message);
+      console.error('❌ useMomsWeek: Error:', err);
+      setError(err.message || 'Error al generar libro semanal');
       throw err;
     } finally {
       setLoading(false);
+      console.log('🔄 useMomsWeek: Loading terminado');
     }
-  }, [userId]);
+  };
 
   return {
     currentWeek,
-    weekHistory,
     weekStats,
+    weekHistory,
     loading,
     error,
-    loadCurrentWeek,
+    fetchCurrentWeek,
+    fetchWeekStats,
+    fetchWeekHistory,
+    createWeek,
     generateWeeklyBook,
-    loadWeekHistory,
-    loadWeekStats,
-    getWeekById
   };
 };

@@ -3,5 +3,8 @@
     "eslint": "^8.57.1",
     "eslint-config-expo": "~8.0.1",
     "eslint-plugin-react-hooks": "^4.6.2"
+  },
+  "dependencies": {
+    "expo-image-picker": "^17.0.8"
   }
 }

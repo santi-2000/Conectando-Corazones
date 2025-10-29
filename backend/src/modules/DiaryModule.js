@@ -15,7 +15,9 @@ class DiaryModule {
    * Configurar rutas del diario
    */
   setupRoutes() {
+    console.log('🔍 DiaryModule: Configurando rutas...');
     this.router.use('/diary', diaryRoutes);
+    console.log('✅ DiaryModule: Rutas configuradas');
   }
 
   /**

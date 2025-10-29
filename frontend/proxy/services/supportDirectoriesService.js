@@ -96,4 +96,6 @@ class SupportDirectoriesService {
   }
 }
 
-export default new SupportDirectoriesService();
+const supportDirectoriesService = new SupportDirectoriesService();
+export { supportDirectoriesService };
+export default supportDirectoriesService;

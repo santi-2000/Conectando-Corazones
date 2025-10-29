@@ -16,7 +16,7 @@ class EducationalBookDTO {
     this.subject = bookData.materia;
     this.description = bookData.descripcion;
     this.coverUrl = bookData.portada_url;
-    this.fileUrl = bookData.archivo_url;
+    this.fileUrl = bookData.archivo_url || bookData.url_recurso || bookData.archivoUrl;
     this.pages = bookData.paginas;
     this.language = bookData.idioma;
     this.publicationDate = bookData.fecha_publicacion;
@@ -51,6 +51,7 @@ class EducationalBookDTO {
       description: this.description,
       coverUrl: this.coverUrl,
       fileUrl: this.fileUrl,
+      archivoUrl: this.fileUrl, // Alias para compatibilidad con frontend
       pages: this.pages,
       language: this.language,
       publicationDate: this.publicationDate,

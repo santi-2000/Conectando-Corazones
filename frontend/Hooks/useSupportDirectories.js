@@ -133,6 +133,7 @@ export const useSupportDirectories = (initialFilters = {}) => {
     filters,
     pagination,
     loadDirectories,
+    fetchDirectories: loadDirectories, // Alias para compatibilidad
     searchDirectories,
     getDirectoryById,
     getDirectoriesByCategory,

@@ -1,132 +1,129 @@
-import apiClient, { API_ENDPOINTS } from '../apiClient';
+import apiClient from '../apiClient';
 
-/**
- * Servicio para manejar diario
- */
-class DiaryService {
+export const diaryService = {
   /**
-   * Obtener entradas del diario
-   */
-  async getEntries(userId, filters = {}) {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.date) queryParams.append('date', filters.date);
-      if (filters.page) queryParams.append('page', filters.page);
-      if (filters.limit) queryParams.append('limit', filters.limit);
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
-
-      const endpoint = `${API_ENDPOINTS.DIARY.ENTRIES}/${userId}/entries${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener entradas del diario:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Crear nueva entrada del diario
+   * Crear entrada de diario
+   * @param {string} userId - ID del usuario
+   * @param {Object} entryData - Datos de la entrada
+   * @returns {Promise<Object>}
    */
   async createEntry(userId, entryData) {
     try {
-      const response = await apiClient.post(
-        `${API_ENDPOINTS.DIARY.CREATE}/${userId}/entries`,
-        entryData
-      );
-      return response.data;
+      console.log('🔍 diaryService.createEntry: Iniciando petición...');
+      const response = await apiClient.post(`/diary/${userId}/daily-entry`, entryData);
+      console.log('✅ diaryService.createEntry: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al crear entrada del diario:', error);
-      throw error;
+      console.error('❌ diaryService.createEntry: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al crear entrada de diario');
     }
-  }
+  },
 
   /**
-   * Actualizar entrada del diario
+   * Obtener entradas del diario (semana actual)
+   * @param {string} userId - ID del usuario
+   * @param {Object} filters - Filtros de búsqueda
+   * @returns {Promise<Object>}
    */
-  async updateEntry(userId, entryId, entryData) {
+  async getEntries(userId, filters = {}) {
     try {
-      const response = await apiClient.put(
-        `${API_ENDPOINTS.DIARY.UPDATE}/${userId}/entries/${entryId}`,
-        entryData
-      );
-      return response.data;
+      console.log('🔍 diaryService.getEntries: Iniciando petición...');
+      const response = await apiClient.get(`/diary/${userId}/weekly`, { params: filters });
+      console.log('✅ diaryService.getEntries: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al actualizar entrada del diario:', error);
-      throw error;
+      console.error('❌ diaryService.getEntries: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener entradas del diario');
     }
-  }
-
-  /**
-   * Eliminar entrada del diario
-   */
-  async deleteEntry(userId, entryId) {
-    try {
-      const response = await apiClient.delete(
-        `${API_ENDPOINTS.DIARY.DELETE}/${userId}/entries/${entryId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error al eliminar entrada del diario:', error);
-      throw error;
-    }
-  }
+  },
 
   /**
    * Obtener entrada por ID
+   * @param {string} userId - ID del usuario
+   * @param {string} entryId - ID de la entrada
+   * @returns {Promise<Object>}
    */
   async getEntryById(userId, entryId) {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.DIARY.ENTRIES}/${userId}/entries/${entryId}`);
-      return response.data;
+      console.log('🔍 diaryService.getEntryById: Iniciando petición...');
+      const response = await apiClient.get(`/diary/${userId}/entries/${entryId}`);
+      console.log('✅ diaryService.getEntryById: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener entrada del diario:', error);
-      throw error;
+      console.error('❌ diaryService.getEntryById: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener entrada del diario');
     }
-  }
+  },
 
   /**
-   * Obtener estadísticas del diario
+   * Actualizar entrada del diario
+   * @param {string} userId - ID del usuario
+   * @param {string} entryId - ID de la entrada
+   * @param {Object} entryData - Datos actualizados
+   * @returns {Promise<Object>}
    */
-  async getDiaryStats(userId, filters = {}) {
+  async updateEntry(userId, entryId, entryData) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.year) queryParams.append('year', filters.year);
-      if (filters.month) queryParams.append('month', filters.month);
-
-      const endpoint = `${API_ENDPOINTS.DIARY.STATS}/${userId}/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
+      console.log('🔍 diaryService.updateEntry: Iniciando petición...');
+      const response = await apiClient.put(`/diary/${userId}/entries/${entryId}`, entryData);
+      console.log('✅ diaryService.updateEntry: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener estadísticas del diario:', error);
-      throw error;
+      console.error('❌ diaryService.updateEntry: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al actualizar entrada del diario');
     }
-  }
+  },
+
+  /**
+   * Eliminar entrada del diario
+   * @param {string} userId - ID del usuario
+   * @param {string} entryId - ID de la entrada
+   * @returns {Promise<Object>}
+   */
+  async deleteEntry(userId, entryId) {
+    try {
+      console.log('🔍 diaryService.deleteEntry: Iniciando petición...');
+      const response = await apiClient.delete(`/diary/${userId}/entries/${entryId}`);
+      console.log('✅ diaryService.deleteEntry: Respuesta recibida:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ diaryService.deleteEntry: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al eliminar entrada del diario');
+    }
+  },
 
   /**
    * Generar PDF del diario
+   * @param {string} userId - ID del usuario
+   * @param {string} weekId - ID de la semana (opcional)
+   * @returns {Promise<Object>}
    */
-  async generateDiaryPDF(userId, filters = {}) {
+  async generatePDF(userId, weekId = null) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
-      if (filters.weekId) queryParams.append('weekId', filters.weekId);
-
-      const endpoint = `${API_ENDPOINTS.DIARY.ENTRIES}/${userId}/generate-pdf${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
+      console.log('🔍 diaryService.generatePDF: Iniciando petición...');
+      const response = await apiClient.post(`/diary/${userId}/generate-pdf`, { weekId });
+      console.log('✅ diaryService.generatePDF: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al generar PDF del diario:', error);
-      throw error;
+      console.error('❌ diaryService.generatePDF: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al generar PDF del diario');
+    }
+  },
+
+  /**
+   * Obtener estadísticas del diario
+   * @param {string} userId - ID del usuario
+   * @returns {Promise<Object>}
+   */
+  async getStats(userId) {
+    try {
+      console.log('🔍 diaryService.getStats: Iniciando petición...');
+      const response = await apiClient.get(`/diary/${userId}/stats`);
+      console.log('✅ diaryService.getStats: Respuesta recibida:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ diaryService.getStats: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener estadísticas del diario');
     }
   }
-}
-
-export default new DiaryService();
+};

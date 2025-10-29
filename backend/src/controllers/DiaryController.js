@@ -220,6 +220,181 @@ class DiaryController {
       });
     }
   }
+
+  /**
+   * Generar PDF del diario
+   * POST /api/v1/diary/:userId/generate-pdf
+   */
+  async generatePDF(req, res) {
+    try {
+      console.log('🔍 DiaryController.generatePDF llamada con:', req.params, req.body);
+      const { userId } = req.params;
+      const { weekId } = req.body;
+
+      if (!userId) {
+        console.log('❌ userId no proporcionado');
+        return res.status(400).json({
+          success: false,
+          error: 'Parámetros requeridos',
+          message: 'userId es requerido'
+        });
+      }
+
+      console.log('📄 Generando PDF para usuario:', userId);
+      const result = await this.diaryService.generatePDF(userId, weekId);
+      console.log('✅ PDF generado:', result.success);
+
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('❌ Error en generatePDF:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * Obtener entrada específica por ID para editar
+   * GET /api/v1/diary/:userId/entries/:entryId
+   */
+  async getEntryById(req, res) {
+    try {
+      const { userId, entryId } = req.params;
+
+      if (!userId || !entryId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parámetros requeridos',
+          message: 'userId y entryId son requeridos'
+        });
+      }
+
+      const result = await this.diaryService.getEntryById(userId, entryId);
+
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error en getEntryById:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * Actualizar entrada específica por ID
+   * PUT /api/v1/diary/:userId/entries/:entryId
+   */
+  async updateEntry(req, res) {
+    try {
+      const { userId, entryId } = req.params;
+      const { titulo, contenido, fotos, emocion, emocion_emoji, tags } = req.body;
+
+      if (!userId || !entryId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parámetros requeridos',
+          message: 'userId y entryId son requeridos'
+        });
+      }
+
+      const entryData = {
+        titulo,
+        contenido,
+        fotos: fotos || [],
+        emocion,
+        emocion_emoji,
+        tags: tags || []
+      };
+
+      const result = await this.diaryService.updateEntry(userId, entryId, entryData);
+
+      if (!result.success) {
+        return res.status(400).json(result);
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error en updateEntry:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * Eliminar entrada específica por ID
+   * DELETE /api/v1/diary/:userId/entries/:entryId
+   */
+  async deleteEntry(req, res) {
+    try {
+      const { userId, entryId } = req.params;
+
+      if (!userId || !entryId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parámetros requeridos',
+          message: 'userId y entryId son requeridos'
+        });
+      }
+
+      const result = await this.diaryService.deleteEntry(userId, entryId);
+
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error en deleteEntry:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * Obtener días de la semana con estado (completado/pendiente)
+   * GET /api/v1/diary/:userId/weekly-days
+   */
+  async getWeeklyDays(req, res) {
+    try {
+      const { userId } = req.params;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parámetros requeridos',
+          message: 'userId es requerido'
+        });
+      }
+
+      const result = await this.diaryService.getWeeklyDays(userId);
+      res.json(result);
+    } catch (error) {
+      console.error('Error en getWeeklyDays:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
 }
 
 module.exports = DiaryController;

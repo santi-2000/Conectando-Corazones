@@ -158,6 +158,7 @@ export const useEducationalBooks = (initialFilters = {}) => {
     filters,
     pagination,
     loadBooks,
+    fetchBooks: loadBooks, // Alias para compatibilidad
     searchBooks,
     getBookById,
     getBooksByCategory,

@@ -72,10 +72,61 @@ class PDFGeneratorService {
 
       await browser.close();
       
+      // Limpiar PDFs antiguos (mantener solo los últimos 5)
+      await this.cleanupOldPDFs(userId);
+      
       return filePath;
     } catch (error) {
       console.error('Error generando PDF:', error);
       throw new Error(`Error al generar PDF: ${error.message}`);
+    }
+  }
+
+  /**
+   * Limpiar PDFs antiguos para evitar acumulación
+   * @param {string} userId - ID del usuario
+   */
+  async cleanupOldPDFs(userId) {
+    try {
+      const files = await fs.readdir(this.outputDir);
+      const userPDFs = files
+        .filter(file => file.startsWith(`diario-semanal-${userId}-`) && file.endsWith('.pdf'))
+        .map(file => ({
+          name: file,
+          path: path.join(this.outputDir, file),
+          stats: null
+        }));
+
+      // Obtener estadísticas de archivos
+      for (let pdf of userPDFs) {
+        try {
+          const stats = await fs.stat(pdf.path);
+          pdf.stats = stats;
+        } catch (error) {
+          console.log(`No se pudo obtener stats de ${pdf.name}`);
+        }
+      }
+
+      // Ordenar por fecha de modificación (más recientes primero)
+      const validPDFs = userPDFs.filter(pdf => pdf.stats).sort((a, b) => b.stats.mtime - a.stats.mtime);
+
+      // Mantener solo los últimos 5 PDFs
+      const pdfsToDelete = validPDFs.slice(5);
+      
+      for (const pdf of pdfsToDelete) {
+        try {
+          await fs.unlink(pdf.path);
+          console.log(`🗑️ PDF eliminado: ${pdf.name}`);
+        } catch (error) {
+          console.log(`Error eliminando PDF ${pdf.name}:`, error.message);
+        }
+      }
+
+      if (pdfsToDelete.length > 0) {
+        console.log(`🧹 Limpieza completada: ${pdfsToDelete.length} PDFs antiguos eliminados`);
+      }
+    } catch (error) {
+      console.error('Error en limpieza de PDFs:', error);
     }
   }
 

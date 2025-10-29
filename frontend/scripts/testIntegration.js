@@ -3,7 +3,7 @@
  * Este script simula las llamadas que haría el frontend
  */
 
-const API_BASE_URL = 'http://192.168.1.190:3000/api/v1';
+const API_BASE_URL = 'http://192.168.0.22:3000/api/v1';
 
 // Función para hacer peticiones HTTP
 async function makeRequest(endpoint, options = {}) {
@@ -156,7 +156,7 @@ async function testIntegration() {
   await runTest('Lecturas infantiles', async () => {
     const response = await makeRequest('/children-readings');
     if (!response.success) throw new Error('Lecturas infantiles falló');
-    return { count: response.data.length };
+    return { count: response.data ? response.data.length : 0 };
   });
 
   // Mostrar resumen

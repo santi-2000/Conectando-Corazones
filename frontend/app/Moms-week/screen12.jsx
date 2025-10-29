@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,17 +7,63 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Image
+  Image,
+  Alert,
+  Linking
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../../components/Button';
 import { Colors } from '../../constants/colors';
 import { FontSizes, Spacing } from '../../constants/dimensions';
+import { useMomsWeek } from '../../Hooks/useMomsWeek';
+import { useDiary } from '../../Hooks/useDiary';
 
 export default function MiSemanaConMama() {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+  
+  // Hook para Moms Week
+  const { 
+    currentWeek, 
+    weekStats, 
+    loading, 
+    error, 
+    fetchCurrentWeek, 
+    fetchWeekStats
+  } = useMomsWeek('test_review');
+  
+  // Hook para Diario (para generar PDF)
+  const { generatePDF } = useDiary('test_review');
+
+  // Cargar datos al montar el componente
+  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+  // useEffect(() => {
+  //   console.log('🔄 Cargando datos de Moms Week...');
+  //   fetchCurrentWeek();
+  // }, []);
+
+  // Cargar estadísticas cuando cambie la semana actual
+  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+  // useEffect(() => {
+  //   if (currentWeek?.id) {
+  //     console.log('📊 Cargando estadísticas de la semana:', currentWeek.id);
+  //     fetchWeekStats(currentWeek.id);
+  //   }
+  // }, [currentWeek]);
+
+  // Recargar datos cuando el componente se enfoque (cuando regrese de agregar entrada)
+  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     console.log('🔄 Pantalla enfocada, recargando datos...');
+  //     fetchCurrentWeek();
+  //     if (currentWeek?.id) {
+  //       fetchWeekStats(currentWeek.id);
+  //     }
+  //   }, []) // Remover dependencias para evitar bucle infinito
+  // );
 
   const handleBack = () => {
     router.back();
@@ -32,25 +78,87 @@ export default function MiSemanaConMama() {
     router.push('/Moms-week/TodaysActivity/screen13');
   };
 
-  const handleGenerarPDF = () => {
-    console.log('Generar PDF');
+  const handleGenerarPDF = async () => {
+    try {
+      console.log('🔄 Generando PDF...');
+      const result = await generatePDF();
+      console.log('✅ PDF generado:', result);
+      
+      if (result?.success && result?.data?.pdfUrl) {
+        const pdfUrl = `http://192.168.0.22:3000${result.data.pdfUrl}`;
+        console.log('📄 PDF URL:', pdfUrl);
+        
+        Alert.alert(
+          'PDF Generado Exitosamente', 
+          'Tu libro semanal ha sido generado. ¿Quieres verlo ahora?',
+          [
+            { text: 'Ver PDF', onPress: () => Linking.openURL(pdfUrl) },
+            { text: 'Más tarde', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'No se pudo obtener la URL del PDF generado.');
+      }
+    } catch (error) {
+      console.error('❌ Error al generar PDF:', error);
+      Alert.alert('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.');
+    }
   };
 
-  // Datos semanales simulados
-  const weeklyStats = {
-    daysCompleted: 3,
+  // Función para calcular la semana actual del año
+  const getCurrentWeekNumber = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const days = Math.floor((now - start) / (24 * 60 * 60 * 1000));
+    return Math.ceil((days + start.getDay() + 1) / 7);
+  };
+
+  // Función para obtener el rango de fechas de la semana actual
+  const getCurrentWeekRange = () => {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - currentDay + 1);
+    
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    
+    const formatDate = (date) => {
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      return `${day} de ${getMonthName(date)}`;
+    };
+    
+    return `${formatDate(monday)} - ${formatDate(sunday)}`;
+  };
+
+  const getMonthName = (date) => {
+    const months = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    return months[date.getMonth()];
+  };
+
+  // Usar datos del backend o valores por defecto
+  const weeklyStats = weekStats || {
+    daysCompleted: 0,
     totalDays: 7,
     emotions: {
-      happy: 2,
-      excited: 1,
+      happy: 0,
+      excited: 0,
       proud: 0,
       calm: 0,
       grateful: 0,
       sad: 0
     },
-    photos: 5,
-    words: 127
+    photos: 0,
+    words: 0
   };
+
+  // Calcular semana actual
+  const currentWeekNumber = getCurrentWeekNumber();
+  const currentWeekRange = getCurrentWeekRange();
 
   const getMotivationalMessage = () => {
     const percentage = Math.round((weeklyStats.daysCompleted / weeklyStats.totalDays) * 100);
@@ -73,6 +181,43 @@ export default function MiSemanaConMama() {
   const handleImageError = () => {
     setImageError(true);
   };
+
+  // Mostrar loading
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Cargando tu semana...</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar error
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Error: {error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchCurrentWeek}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -136,7 +281,7 @@ export default function MiSemanaConMama() {
             </View>
             
             <Text style={styles.cardText}>
-              📅 Semana 42 (7-13 de octubre)
+              📅 Semana {currentWeekNumber} ({currentWeekRange})
             </Text>
             <Text style={styles.progressText}>
               {weeklyStats.daysCompleted} de {weeklyStats.totalDays} días completados
@@ -482,5 +627,44 @@ const styles = StyleSheet.create({
         maxWidth: 300,
         alignSelf: 'center',
       },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  loadingText: {
+    fontSize: FontSizes.lg,
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  errorText: {
+    fontSize: FontSizes.md,
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  retryButton: {
+    backgroundColor: 'white',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  retryButtonText: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
+    fontWeight: 'bold',
+  },
 });
 

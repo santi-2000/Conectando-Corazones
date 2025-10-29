@@ -6,6 +6,7 @@
 
 const MomsWeekRepository = require('../repositories/MomsWeekRepository');
 const PDFGeneratorService = require('./PDFGeneratorService');
+const path = require('path');
 
 class MomsWeekService {
   constructor() {
@@ -118,14 +119,34 @@ class MomsWeekService {
   /**
    * Generar libro semanal
    * @param {string} userId 
+   * @param {Object} bookData - Datos del libro (opcional, si no se proporciona se obtienen del repositorio)
    * @returns {Promise<Object>}
    */
-  async generateWeeklyBook(userId) {
+  async generateWeeklyBook(userId, bookData = null) {
     try {
       const currentDate = new Date();
       const weekInfo = this.calculateWeekInfo(currentDate);
       
-      const bookData = await this.repository.generateWeeklyBook(userId, weekInfo.fechaInicio, weekInfo.fechaFin);
+      // Si no se proporcionan datos del libro, obtenerlos del repositorio
+      if (!bookData) {
+        bookData = await this.repository.generateWeeklyBook(userId, weekInfo.fechaInicio, weekInfo.fechaFin);
+      }
+      
+      // Generar el PDF real
+      const pdfPath = await this.pdfGenerator.generateWeeklyDiaryPDF({
+        titulo: `Mi semana con mamá - Semana ${weekInfo.semana}`,
+        fecha: weekInfo.rango,
+        contenido: bookData,
+        estadisticas: {
+          totalEntradas: bookData.entradas.length,
+          totalFotos: bookData.fotos,
+          totalPalabras: bookData.palabras,
+          momentosFelices: bookData.momentosFelices
+        }
+      }, userId);
+      
+      // Convertir ruta del archivo a URL accesible
+      const pdfUrl = `/pdfs/${path.basename(pdfPath)}`;
       
       return {
         success: true,
@@ -138,7 +159,8 @@ class MomsWeekService {
             totalFotos: bookData.fotos,
             totalPalabras: bookData.palabras,
             momentosFelices: bookData.momentosFelices
-          }
+          },
+          pdfUrl: pdfUrl
         }
       };
     } catch (error) {

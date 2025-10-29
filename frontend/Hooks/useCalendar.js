@@ -1,184 +1,127 @@
-import { useState, useEffect, useCallback } from 'react';
-import { calendarService } from '../proxy/services';
+import { useState, useEffect } from 'react';
+import { calendarService } from '../proxy/services/calendarService';
 
-/**
- * Hook para manejar calendario
- */
-export const useCalendar = (initialFilters = {}) => {
+export const useCalendar = (userId = 'test_review') => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(initialFilters);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0
-  });
 
-  // Cargar eventos cuando cambien los filtros
-  useEffect(() => {
-    loadEvents();
-  }, [filters]);
-
-  const loadEvents = useCallback(async () => {
+  const fetchEvents = async (filters = {}) => {
     try {
+      console.log('🔄 useCalendar: Iniciando fetchEvents...');
       setLoading(true);
       setError(null);
-      
-      const result = await calendarService.getEvents(filters);
-      
-      setEvents(result.events || []);
-      setPagination({
-        page: result.page || 1,
-        limit: result.limit || 10,
-        total: result.total || 0,
-        totalPages: result.totalPages || 0
-      });
+      const response = await calendarService.getEvents(userId, filters);
+      console.log('✅ useCalendar: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useCalendar: Datos a guardar:', data);
+      setEvents(Array.isArray(data) ? data : []);
+      console.log('✅ useCalendar: events actualizado');
     } catch (err) {
-      setError(err.message);
-      setEvents([]);
+      console.error('❌ useCalendar: Error:', err);
+      setError(err.message || 'Error al cargar eventos del calendario');
     } finally {
       setLoading(false);
+      console.log('🔄 useCalendar: Loading terminado');
     }
-  }, [filters]);
+  };
 
-  const createEvent = useCallback(async (eventData) => {
+  const createEvent = async (eventData) => {
     try {
+      console.log('🔄 useCalendar: Iniciando createEvent...');
       setLoading(true);
       setError(null);
-      
-      const result = await calendarService.createEvent(eventData);
-      
-      // Recargar eventos después de crear
-      await loadEvents();
-      
-      return result;
+      const response = await calendarService.createEvent(userId, eventData);
+      console.log('✅ useCalendar: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useCalendar: Datos a guardar:', data);
+      // Actualizar la lista de eventos después de crear
+      await fetchEvents();
+      console.log('✅ useCalendar: createEvent completado');
+      return data;
     } catch (err) {
-      setError(err.message);
+      console.error('❌ useCalendar: Error:', err);
+      setError(err.message || 'Error al crear evento');
       throw err;
     } finally {
       setLoading(false);
+      console.log('🔄 useCalendar: Loading terminado');
     }
-  }, [loadEvents]);
+  };
 
-  const updateEvent = useCallback(async (eventId, eventData) => {
+  const updateEvent = async (eventId, eventData) => {
     try {
+      console.log('🔄 useCalendar: Iniciando updateEvent...');
       setLoading(true);
       setError(null);
-      
-      const result = await calendarService.updateEvent(eventId, eventData);
-      
-      // Recargar eventos después de actualizar
-      await loadEvents();
-      
-      return result;
+      const response = await calendarService.updateEvent(userId, eventId, eventData);
+      console.log('✅ useCalendar: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useCalendar: Datos a guardar:', data);
+      // Actualizar la lista de eventos después de actualizar
+      await fetchEvents();
+      console.log('✅ useCalendar: updateEvent completado');
+      return data;
     } catch (err) {
-      setError(err.message);
+      console.error('❌ useCalendar: Error:', err);
+      setError(err.message || 'Error al actualizar evento');
       throw err;
     } finally {
       setLoading(false);
+      console.log('🔄 useCalendar: Loading terminado');
     }
-  }, [loadEvents]);
+  };
 
-  const deleteEvent = useCallback(async (eventId) => {
+  const deleteEvent = async (eventId) => {
     try {
+      console.log('🔄 useCalendar: Iniciando deleteEvent...');
       setLoading(true);
       setError(null);
-      
-      const result = await calendarService.deleteEvent(eventId);
-      
-      // Recargar eventos después de eliminar
-      await loadEvents();
-      
-      return result;
+      const response = await calendarService.deleteEvent(userId, eventId);
+      console.log('✅ useCalendar: Respuesta recibida:', response);
+      // Actualizar la lista de eventos después de eliminar
+      await fetchEvents();
+      console.log('✅ useCalendar: deleteEvent completado');
+      return response;
     } catch (err) {
-      setError(err.message);
+      console.error('❌ useCalendar: Error:', err);
+      setError(err.message || 'Error al eliminar evento');
       throw err;
     } finally {
       setLoading(false);
+      console.log('🔄 useCalendar: Loading terminado');
     }
-  }, [loadEvents]);
+  };
 
-  const getEventById = useCallback(async (eventId) => {
+  const getEventsByDate = async (date) => {
     try {
+      console.log('🔄 useCalendar: Iniciando getEventsByDate...');
       setLoading(true);
       setError(null);
-      
-      const result = await calendarService.getEventById(eventId);
-      return result;
+      const response = await calendarService.getEventsByDate(userId, date);
+      console.log('✅ useCalendar: Respuesta recibida:', response);
+      const data = response.data || response;
+      console.log('📊 useCalendar: Datos a guardar:', data);
+      console.log('✅ useCalendar: getEventsByDate completado');
+      return data;
     } catch (err) {
-      setError(err.message);
+      console.error('❌ useCalendar: Error:', err);
+      setError(err.message || 'Error al obtener eventos por fecha');
       throw err;
     } finally {
       setLoading(false);
+      console.log('🔄 useCalendar: Loading terminado');
     }
-  }, []);
-
-  const getEventsByDate = useCallback(async (date) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await calendarService.getEventsByDate(date);
-      setEvents(result.events || []);
-      
-      return result;
-    } catch (err) {
-      setError(err.message);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const getEventsByType = useCallback(async (type, typeFilters = {}) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const result = await calendarService.getEventsByType(type, {
-        ...filters,
-        ...typeFilters
-      });
-      
-      setEvents(result.events || []);
-      setPagination({
-        page: result.page || 1,
-        limit: result.limit || 10,
-        total: result.total || 0,
-        totalPages: result.totalPages || 0
-      });
-    } catch (err) {
-      setError(err.message);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
-
-  const updateFilters = useCallback((newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
-
-  const resetFilters = useCallback(() => {
-    setFilters(initialFilters);
-  }, [initialFilters]);
+  };
 
   return {
     events,
     loading,
     error,
-    filters,
-    pagination,
-    loadEvents,
+    fetchEvents,
     createEvent,
     updateEvent,
     deleteEvent,
-    getEventById,
     getEventsByDate,
-    getEventsByType,
-    updateFilters,
-    resetFilters
   };
 };

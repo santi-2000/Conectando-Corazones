@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,16 +8,40 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  Linking
+  Linking,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
 import { FontSizes, Spacing } from '../../constants/dimensions';
+import { useFafore } from '../../Hooks/useFafore';
 
 export default function FaforeScreen() {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+
+  // Hook para obtener información de FAFORE del backend
+  const { 
+    faforeInfo, 
+    loading, 
+    error, 
+    fetchFaforeInfo 
+  } = useFafore();
+
+  useEffect(() => {
+    // Cargar información de FAFORE al montar el componente
+    console.log('🔄 Cargando información de FAFORE...');
+    fetchFaforeInfo();
+  }, []);
+
+  // Debug: Log cuando cambien los datos
+  useEffect(() => {
+    console.log('📊 FAFORE Info actualizada:', faforeInfo);
+    console.log('🔄 Loading:', loading);
+    console.log('❌ Error:', error);
+  }, [faforeInfo, loading, error]);
 
   const handleBack = () => {
     router.back();
@@ -47,6 +71,43 @@ export default function FaforeScreen() {
   const handleImageError = () => {
     setImageError(true);
   };
+
+  // Mostrar loading si está cargando
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Cargando información de FAFORE...</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar error si hay un error
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.end]}
+          style={styles.gradient}
+        >
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Error: {error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchFaforeInfo}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -79,20 +140,18 @@ export default function FaforeScreen() {
               />
             ) : (
               <View style={styles.logoFallback}>
-                <Text style={styles.logoText}>FAFORE</Text>
+                <Text style={styles.logoText}>{faforeInfo?.nombre || 'FAFORE'}</Text>
               </View>
             )}
-            <Text style={styles.organizationName}>FAFORE</Text>
-            <Text style={styles.organizationSubtitle}>Familia, Fortaleza Y Reinserción A.C.</Text>
+            <Text style={styles.organizationName}>{faforeInfo?.nombre || 'FAFORE'}</Text>
+            <Text style={styles.organizationSubtitle}>{faforeInfo?.subtitulo || 'Familia, Fortaleza Y Reinserción A.C.'}</Text>
           </View>
 
           {/* Mission Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🎯 Nuestra Misión</Text>
             <Text style={styles.sectionContent}>
-              Trabajamos para fortalecer los lazos familiares y apoyar la reinserción social, 
-              brindando herramientas y recursos que promuevan el bienestar integral de las familias 
-              y comunidades.
+              {faforeInfo?.mision || 'Trabajamos para fortalecer los lazos familiares y apoyar la reinserción social, brindando herramientas y recursos que promuevan el bienestar integral de las familias y comunidades.'}
             </Text>
           </View>
 
@@ -100,8 +159,7 @@ export default function FaforeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👁️ Nuestra Visión</Text>
             <Text style={styles.sectionContent}>
-              Ser una organización líder en la promoción de la unidad familiar y la reinserción social, 
-              creando un impacto positivo y duradero en las comunidades que servimos.
+              {faforeInfo?.vision || 'Ser una organización líder en la promoción de la unidad familiar y la reinserción social, creando un impacto positivo y duradero en las comunidades que servimos.'}
             </Text>
           </View>
 
@@ -109,11 +167,19 @@ export default function FaforeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>💎 Nuestros Valores</Text>
             <View style={styles.valuesList}>
-              <Text style={styles.valueItem}>• Solidaridad y Compromiso</Text>
-              <Text style={styles.valueItem}>• Respeto y Dignidad</Text>
-              <Text style={styles.valueItem}>• Transparencia y Honestidad</Text>
-              <Text style={styles.valueItem}>• Trabajo en Equipo</Text>
-              <Text style={styles.valueItem}>• Innovación Social</Text>
+              {faforeInfo?.valores && faforeInfo.valores.length > 0 ? (
+                faforeInfo.valores.map((valor, index) => (
+                  <Text key={index} style={styles.valueItem}>• {valor}</Text>
+                ))
+              ) : (
+                <>
+                  <Text style={styles.valueItem}>• Solidaridad y Compromiso</Text>
+                  <Text style={styles.valueItem}>• Respeto y Dignidad</Text>
+                  <Text style={styles.valueItem}>• Transparencia y Honestidad</Text>
+                  <Text style={styles.valueItem}>• Trabajo en Equipo</Text>
+                  <Text style={styles.valueItem}>• Innovación Social</Text>
+                </>
+              )}
             </View>
           </View>
 
@@ -124,36 +190,38 @@ export default function FaforeScreen() {
             <View style={styles.contactCard}>
               <TouchableOpacity 
                 style={styles.contactItem}
-                onPress={() => handleCall('+52 55 1234 5678')}
+                onPress={() => handleCall(faforeInfo?.contacto?.telefono || '+52 55 1234 5678')}
               >
                 <Text style={styles.contactIcon}>📞</Text>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactLabel}>Teléfono</Text>
-                  <Text style={styles.contactValue}>+52 55 1234 5678</Text>
+                  <Text style={styles.contactValue}>{faforeInfo?.contacto?.telefono || '+52 55 1234 5678'}</Text>
                 </View>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={styles.contactItem}
-                onPress={() => handleEmail('contacto@fafore.org')}
+                onPress={() => handleEmail(faforeInfo?.contacto?.email || 'contacto@fafore.org')}
               >
                 <Text style={styles.contactIcon}>✉️</Text>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactLabel}>Email</Text>
-                  <Text style={styles.contactValue}>contacto@fafore.org</Text>
+                  <Text style={styles.contactValue}>{faforeInfo?.contacto?.email || 'contacto@fafore.org'}</Text>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.contactItem}
-                onPress={() => handleWebsite('https://www.fafore.org')}
-              >
-                <Text style={styles.contactIcon}>🌐</Text>
-                <View style={styles.contactInfo}>
-                  <Text style={styles.contactLabel}>Sitio Web</Text>
-                  <Text style={styles.contactValue}>www.fafore.org</Text>
-                </View>
-              </TouchableOpacity>
+              {faforeInfo?.redesSociales?.sitio_web && faforeInfo.redesSociales.sitio_web.trim() !== '' && (
+                <TouchableOpacity 
+                  style={styles.contactItem}
+                  onPress={() => handleWebsite(faforeInfo.redesSociales.sitio_web)}
+                >
+                  <Text style={styles.contactIcon}>🌐</Text>
+                  <View style={styles.contactInfo}>
+                    <Text style={styles.contactLabel}>Sitio Web</Text>
+                    <Text style={styles.contactValue}>{faforeInfo.redesSociales.sitio_web}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity 
                 style={styles.contactItem}
@@ -162,7 +230,7 @@ export default function FaforeScreen() {
                 <Text style={styles.contactIcon}>📍</Text>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactLabel}>Dirección</Text>
-                  <Text style={styles.contactValue}>Av. Reforma 123, CDMX</Text>
+                  <Text style={styles.contactValue}>{faforeInfo?.contacto?.direccion || 'Av. Reforma 123, CDMX'}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -172,52 +240,42 @@ export default function FaforeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🛠️ Nuestros Servicios</Text>
             <View style={styles.servicesList}>
-              <View style={styles.serviceItem}>
-                <Text style={styles.serviceIcon}>👨‍👩‍👧‍👦</Text>
-                <Text style={styles.serviceText}>Apoyo Familiar</Text>
-              </View>
-              <View style={styles.serviceItem}>
-                <Text style={styles.serviceIcon}>📚</Text>
-                <Text style={styles.serviceText}>Educación</Text>
-              </View>
-              <View style={styles.serviceItem}>
-                <Text style={styles.serviceIcon}>🏥</Text>
-                <Text style={styles.serviceText}>Salud</Text>
-              </View>
-              <View style={styles.serviceItem}>
-                <Text style={styles.serviceIcon}>⚖️</Text>
-                <Text style={styles.serviceText}>Asesoría Legal</Text>
-              </View>
-              <View style={styles.serviceItem}>
-                <Text style={styles.serviceIcon}>🤝</Text>
-                <Text style={styles.serviceText}>Reinserción Social</Text>
-              </View>
-              <View style={styles.serviceItem}>
-                <Text style={styles.serviceIcon}>💼</Text>
-                <Text style={styles.serviceText}>Desarrollo Laboral</Text>
-              </View>
+              {faforeInfo?.servicios && faforeInfo.servicios.length > 0 ? (
+                faforeInfo.servicios
+                  .filter(servicio => servicio.nombre !== 'Salud') // Filtrar "Salud"
+                  .map((servicio, index) => (
+                    <View key={index} style={styles.serviceItem}>
+                      <Text style={styles.serviceIcon}>{servicio.icono}</Text>
+                      <Text style={styles.serviceText}>{servicio.nombre}</Text>
+                    </View>
+                  ))
+              ) : (
+                <>
+                  <View style={styles.serviceItem}>
+                    <Text style={styles.serviceIcon}>👨‍👩‍👧‍👦</Text>
+                    <Text style={styles.serviceText}>Apoyo Familiar</Text>
+                  </View>
+                  <View style={styles.serviceItem}>
+                    <Text style={styles.serviceIcon}>📚</Text>
+                    <Text style={styles.serviceText}>Educación</Text>
+                  </View>
+                  <View style={styles.serviceItem}>
+                    <Text style={styles.serviceIcon}>⚖️</Text>
+                    <Text style={styles.serviceText}>Asesoría Legal</Text>
+                  </View>
+                  <View style={styles.serviceItem}>
+                    <Text style={styles.serviceIcon}>🤝</Text>
+                    <Text style={styles.serviceText}>Reinserción Social</Text>
+                  </View>
+                  <View style={styles.serviceItem}>
+                    <Text style={styles.serviceIcon}>💼</Text>
+                    <Text style={styles.serviceText}>Desarrollo Laboral</Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
 
-          {/* Schedule Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🕒 Horarios de Atención</Text>
-            <View style={styles.scheduleCard}>
-              <Text style={styles.scheduleText}>Lunes a Viernes: 9:00 AM - 6:00 PM</Text>
-              <Text style={styles.scheduleText}>Sábados: 9:00 AM - 2:00 PM</Text>
-              <Text style={styles.scheduleText}>Domingos: Cerrado</Text>
-            </View>
-          </View>
-
-          {/* Legal Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📋 Información Legal</Text>
-            <View style={styles.legalCard}>
-              <Text style={styles.legalText}>Registro ante SAT: RFC FAF123456789</Text>
-              <Text style={styles.legalText}>Constitución: 15 de Marzo, 2020</Text>
-              <Text style={styles.legalText}>Clave de Registro: FAF-2020-001</Text>
-            </View>
-          </View>
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
@@ -406,5 +464,47 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: Spacing.xs,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  loadingText: {
+    fontSize: FontSizes.lg,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  errorText: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: Colors.text.white,
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+  },
+  debugText: {
+    fontSize: FontSizes.sm,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    marginTop: Spacing.xs,
+    fontStyle: 'italic',
   },
 });

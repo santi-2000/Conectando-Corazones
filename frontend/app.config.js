@@ -11,14 +11,23 @@ export default {
       silentLaunch: true
     },
     ios: {
-      supportsTablet: true
+      supportsTablet: true,
+      infoPlist: {
+        NSCameraUsageDescription: "Esta app necesita acceso a la cámara para tomar fotos para tu diario semanal.",
+        NSPhotoLibraryUsageDescription: "Esta app necesita acceso a tu galería de fotos para seleccionar imágenes para tu diario semanal."
+      }
     },
     android: {
       adaptiveIcon: {
         backgroundColor: "#E6F4FE"
       },
       edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      permissions: [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     web: {
       output: "static",
@@ -37,6 +46,13 @@ export default {
           dark: {
             backgroundColor: "#000000"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          photosPermission: "Esta app necesita acceso a tu galería de fotos para seleccionar imágenes para tu diario semanal.",
+          cameraPermission: "Esta app necesita acceso a la cámara para tomar fotos para tu diario semanal."
         }
       ]
     ],

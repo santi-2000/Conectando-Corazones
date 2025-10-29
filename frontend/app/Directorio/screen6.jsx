@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -6,16 +6,34 @@ import {
   TouchableOpacity, 
   SafeAreaView,
   StatusBar,
-  Image
+  Image,
+  ScrollView,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
 import { FontSizes, Spacing } from '../../constants/dimensions';
+import { useSupportDirectories } from '../../Hooks/useSupportDirectories';
 
 export default function DirectorioApoyo() {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Hook para obtener directorios del backend
+  const { 
+    directories, 
+    loading, 
+    error, 
+    fetchDirectories 
+  } = useSupportDirectories();
+
+  useEffect(() => {
+    // Cargar directorios al montar el componente
+    fetchDirectories();
+  }, []);
 
   const navigateToCategory = (category) => {
     // Navegar a la categoría específica
@@ -36,6 +54,33 @@ export default function DirectorioApoyo() {
         console.log('Navegando a:', category);
     }
   };
+
+  const handleDirectoryPress = (directory) => {
+    Alert.alert(
+      directory.name,
+      directory.description,
+      [
+        { text: 'Cerrar', style: 'cancel' },
+        { 
+          text: 'Ver detalles', 
+          onPress: () => {
+            // Aquí iría la lógica para ver más detalles
+            console.log('Ver detalles de:', directory.name);
+          }
+        }
+      ]
+    );
+  };
+
+  // Filtrar directorios por categoría
+  const filteredDirectories = selectedCategory === 'all' 
+    ? directories 
+    : directories?.filter(dir => 
+        dir.category?.toLowerCase().includes(selectedCategory.toLowerCase())
+      ) || [];
+
+  // Obtener categorías únicas
+  const categories = ['all', ...new Set(directories?.map(dir => dir.category) || [])];
 
   const handleBack = () => {
     router.back();

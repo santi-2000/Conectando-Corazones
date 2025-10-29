@@ -1,127 +1,112 @@
-import apiClient, { API_ENDPOINTS } from '../apiClient';
+import apiClient from '../apiClient';
 
-/**
- * Servicio para manejar calendario
- */
-class CalendarService {
+export const calendarService = {
   /**
    * Obtener eventos del calendario
+   * @param {string} userId - ID del usuario
+   * @param {Object} filters - Filtros de búsqueda
+   * @returns {Promise<Object>}
    */
-  async getEvents(filters = {}) {
+  async getEvents(userId, filters = {}) {
     try {
-      const queryParams = new URLSearchParams();
-      
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
-      if (filters.type) queryParams.append('type', filters.type);
-      if (filters.page) queryParams.append('page', filters.page);
-      if (filters.limit) queryParams.append('limit', filters.limit);
-
-      const endpoint = `${API_ENDPOINTS.CALENDAR.EVENTS}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
+      console.log('🔍 calendarService.getEvents: Iniciando petición...');
+      const response = await apiClient.get(`/calendar/${userId}/events`, { params: filters });
+      console.log('✅ calendarService.getEvents: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener eventos del calendario:', error);
-      throw error;
+      console.error('❌ calendarService.getEvents: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener eventos del calendario');
     }
-  }
+  },
 
   /**
    * Crear nuevo evento
+   * @param {string} userId - ID del usuario
+   * @param {Object} eventData - Datos del evento
+   * @returns {Promise<Object>}
    */
-  async createEvent(eventData) {
+  async createEvent(userId, eventData) {
     try {
-      const response = await apiClient.post(
-        API_ENDPOINTS.CALENDAR.CREATE,
-        eventData
-      );
-      return response.data;
+      console.log('🔍 calendarService.createEvent: Iniciando petición...');
+      const response = await apiClient.post(`/calendar/${userId}/events`, eventData);
+      console.log('✅ calendarService.createEvent: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al crear evento:', error);
-      throw error;
+      console.error('❌ calendarService.createEvent: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al crear evento');
     }
-  }
+  },
 
   /**
    * Actualizar evento
+   * @param {string} userId - ID del usuario
+   * @param {string} eventId - ID del evento
+   * @param {Object} eventData - Datos actualizados del evento
+   * @returns {Promise<Object>}
    */
-  async updateEvent(eventId, eventData) {
+  async updateEvent(userId, eventId, eventData) {
     try {
-      const response = await apiClient.put(
-        `${API_ENDPOINTS.CALENDAR.UPDATE}/${eventId}`,
-        eventData
-      );
-      return response.data;
+      console.log('🔍 calendarService.updateEvent: Iniciando petición...');
+      const response = await apiClient.put(`/calendar/${userId}/events/${eventId}`, eventData);
+      console.log('✅ calendarService.updateEvent: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al actualizar evento:', error);
-      throw error;
+      console.error('❌ calendarService.updateEvent: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al actualizar evento');
     }
-  }
+  },
 
   /**
    * Eliminar evento
+   * @param {string} userId - ID del usuario
+   * @param {string} eventId - ID del evento
+   * @returns {Promise<Object>}
    */
-  async deleteEvent(eventId) {
+  async deleteEvent(userId, eventId) {
     try {
-      const response = await apiClient.delete(
-        `${API_ENDPOINTS.CALENDAR.DELETE}/${eventId}`
-      );
-      return response.data;
+      console.log('🔍 calendarService.deleteEvent: Iniciando petición...');
+      const response = await apiClient.delete(`/calendar/${userId}/events/${eventId}`);
+      console.log('✅ calendarService.deleteEvent: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al eliminar evento:', error);
-      throw error;
+      console.error('❌ calendarService.deleteEvent: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al eliminar evento');
     }
-  }
+  },
 
   /**
    * Obtener evento por ID
+   * @param {string} userId - ID del usuario
+   * @param {string} eventId - ID del evento
+   * @returns {Promise<Object>}
    */
-  async getEventById(eventId) {
+  async getEventById(userId, eventId) {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.CALENDAR.EVENTS}/${eventId}`);
-      return response.data;
+      console.log('🔍 calendarService.getEventById: Iniciando petición...');
+      const response = await apiClient.get(`/calendar/${userId}/events/${eventId}`);
+      console.log('✅ calendarService.getEventById: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener evento:', error);
-      throw error;
+      console.error('❌ calendarService.getEventById: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener evento');
     }
-  }
+  },
 
   /**
    * Obtener eventos por fecha
+   * @param {string} userId - ID del usuario
+   * @param {string} date - Fecha en formato YYYY-MM-DD
+   * @returns {Promise<Object>}
    */
-  async getEventsByDate(date) {
+  async getEventsByDate(userId, date) {
     try {
-      const response = await apiClient.get(`${API_ENDPOINTS.CALENDAR.EVENTS}/date/${date}`);
-      return response.data;
+      console.log('🔍 calendarService.getEventsByDate: Iniciando petición...');
+      const response = await apiClient.get(`/calendar/${userId}/events/date/${date}`);
+      console.log('✅ calendarService.getEventsByDate: Respuesta recibida:', response);
+      return response;
     } catch (error) {
-      console.error('Error al obtener eventos por fecha:', error);
-      throw error;
+      console.error('❌ calendarService.getEventsByDate: Error:', error);
+      throw new Error(error.response?.data?.message || 'Error al obtener eventos por fecha');
     }
   }
-
-  /**
-   * Obtener eventos por tipo
-   */
-  async getEventsByType(type, filters = {}) {
-    try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('type', type);
-      
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
-      if (filters.page) queryParams.append('page', filters.page);
-      if (filters.limit) queryParams.append('limit', filters.limit);
-
-      const endpoint = `${API_ENDPOINTS.CALENDAR.EVENTS}/type/${type}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      
-      const response = await apiClient.get(endpoint);
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener eventos por tipo:', error);
-      throw error;
-    }
-  }
-}
-
-export default new CalendarService();
+};
