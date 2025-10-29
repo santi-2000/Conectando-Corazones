@@ -11,6 +11,41 @@ class ChildrenReadingsController {
   }
 
   /**
+   * GET /children-readings
+   * Obtener todas las lecturas infantiles
+   */
+  async getBooks(req, res) {
+    try {
+      const { categoria, search, page = 1, limit = 10 } = req.query;
+      
+      const filters = {};
+      if (categoria) filters.categoria = categoria;
+      if (search) filters.search = search;
+      
+      const pagination = {
+        page: parseInt(page),
+        limit: parseInt(limit)
+      };
+
+      const result = await this.service.getBooks(filters, pagination);
+      
+      res.json({
+        success: true,
+        message: 'Lecturas infantiles obtenidas exitosamente',
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      console.error('Error en getBooks:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: 'Error al obtener lecturas infantiles'
+      });
+    }
+  }
+
+  /**
    * GET /children-readings/virtual-library
    * Obtener información de la biblioteca virtual
    */

@@ -22,7 +22,10 @@ class CalendarController {
       if (fecha_inicio) filters.fecha_inicio = fecha_inicio;
       if (fecha_fin) filters.fecha_fin = fecha_fin;
 
-      const result = await this.service.getEvents(userId, filters);
+      // Si no hay userId, usar un valor por defecto o manejar de otra manera
+      const actualUserId = userId || 'default_user';
+
+      const result = await this.service.getEvents(actualUserId, filters);
       
       res.json({
         success: true,

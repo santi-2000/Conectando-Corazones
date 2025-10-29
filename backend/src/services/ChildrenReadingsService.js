@@ -11,6 +11,27 @@ class ChildrenReadingsService {
   }
 
   /**
+   * Obtener todas las lecturas infantiles
+   * @param {Object} filters 
+   * @param {Object} pagination 
+   * @returns {Promise<Object>}
+   */
+  async getBooks(filters = {}, pagination = {}) {
+    try {
+      const result = await this.repository.findAll(filters, pagination);
+      
+      return {
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      };
+    } catch (error) {
+      console.error('Error en getBooks:', error);
+      throw new Error(`Error al obtener lecturas infantiles: ${error.message}`);
+    }
+  }
+
+  /**
    * Obtener información de la biblioteca virtual
    * @returns {Promise<Object>}
    */

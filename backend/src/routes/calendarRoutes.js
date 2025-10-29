@@ -97,6 +97,14 @@ const validateEvent = [
 // ===== PANTALLA 4: CALENDARIO =====
 
 /**
+ * GET /calendar/events
+ * Obtener todos los eventos (sin userId)
+ */
+router.get('/events', optionalAuth, async (req, res) => {
+  await controller.getEvents(req, res);
+});
+
+/**
  * GET /calendar/:userId/events
  * Obtener todos los eventos de un usuario con filtros opcionales
  */

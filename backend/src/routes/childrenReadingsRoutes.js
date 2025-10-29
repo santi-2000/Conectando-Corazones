@@ -36,6 +36,14 @@ const validateGetBooks = [
 ];
 
 /**
+ * GET /children-readings
+ * Obtener todas las lecturas infantiles (ruta raíz)
+ */
+router.get('/', optionalAuth, validateGetBooks, async (req, res) => {
+  await controller.getBooks(req, res);
+});
+
+/**
  * GET /children-readings/virtual-library
  * Obtener información de la biblioteca virtual
  */

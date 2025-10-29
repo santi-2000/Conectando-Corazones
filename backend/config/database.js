@@ -17,15 +17,45 @@ const dbConfig = {
   } : false
 };
 
-const pool = mysql.createPool(dbConfig);
+const pool = mysql.createPool({
+  ...dbConfig,
+  // Configuración de pool mejorada (solo opciones válidas)
+  connectionLimit: 10,
+  queueLimit: 0,
+  // Configuración de timeouts válidos
+  acquireTimeout: 60000,
+  // Configuración de reconexión automática
+  reconnect: true
+});
 
-const query = async (query, params = []) => {
+const query = async (sql, params = []) => {
+  let connection;
   try {
-    const [rows] = await pool.execute(query, params);
+    connection = await pool.getConnection();
+    const [rows] = await connection.execute(sql, params);
     return rows;
   } catch (error) {
     console.error('Error en consulta SQL:', error);
+    
+    // Si es un error de conexión, intentar reconectar
+    if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
+      console.log('🔄 Intentando reconectar a la base de datos...');
+      try {
+        // Esperar un poco antes de reintentar
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const [rows] = await pool.execute(sql, params);
+        return rows;
+      } catch (retryError) {
+        console.error('❌ Error en reintento:', retryError);
+        throw retryError;
+      }
+    }
+    
     throw error;
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 

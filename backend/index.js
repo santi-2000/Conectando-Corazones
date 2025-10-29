@@ -21,7 +21,15 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://tu-dominio.com'] 
-    : ['http://localhost:3000', 'http://localhost:8081', 'http://localhost:8082'],
+    : [
+        'http://localhost:3000', 
+        'http://localhost:8081', 
+        'http://localhost:8082',
+        // Permitir cualquier IP de red local (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+        /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+        /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+        /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/
+      ],
   credentials: true
 }));
 
@@ -109,7 +117,7 @@ const authModule = new AuthModule();
 // app.use('/api/v1/notifications', require('./routes/notifications'));
 // app.use('/api/v1/admin', require('./routes/admin'));
 
-// Usar módulos nuevos
+// Usar módulos nuevos - TODOS LOS MÓDULOS EN ORDEN
 app.use('/api/v1', supportDirectoryModule.getRouter());
 app.use('/api/v1', educationalBookModule.getRouter());
 app.use('/api/v1', childrenReadingsModule.getRouter());
@@ -120,6 +128,12 @@ app.use('/api/v1', faforeModule.getRouter());
 app.use('/api/v1', adminStatisticsModule.getRouter());
 app.use('/api/v1', userModule.getRouter());
 app.use('/api/v1', authModule.getRouter());
+
+// Rutas de red (para detección automática de IP)
+app.use('/api/v1', require('./src/routes/networkRoutes'));
+
+// Rutas de diagnóstico
+app.use('/api/v1/diagnostic', require('./src/routes/diagnosticRoutes'));
 
 
 // 404 - Ruta no encontrada
@@ -145,9 +159,10 @@ app.use((err, req, res, next) => {
 // INICIAR SERVIDOR
 // =============================================
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
   console.log(`📱 API disponible en: http://localhost:${PORT}`);
+  console.log(`📱 API disponible en: http://192.168.1.190:${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
   console.log(`📚 Documentación: http://localhost:${PORT}/api/docs`);
 });
