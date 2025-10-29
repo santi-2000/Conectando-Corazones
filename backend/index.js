@@ -82,6 +82,10 @@ const ChildrenReadingsModule = require('./src/modules/ChildrenReadingsModule');
 const MomsWeekModule = require('./src/modules/MomsWeekModule');
 const DiaryModule = require('./src/modules/DiaryModule');
 const CalendarModule = require('./src/modules/CalendarModule');
+const FaforeModule = require('./src/modules/FaforeModule');
+const AdminStatisticsModule = require('./src/modules/AdminStatisticsModule');
+const UserModule = require('./src/modules/UserModule');
+const AuthModule = require('./src/modules/AuthModule');
 
 // Crear instancias de módulos
 const supportDirectoryModule = new SupportDirectoryModule();
@@ -90,6 +94,10 @@ const childrenReadingsModule = new ChildrenReadingsModule();
 const momsWeekModule = new MomsWeekModule();
 const diaryModule = new DiaryModule();
 const calendarModule = new CalendarModule();
+const faforeModule = new FaforeModule();
+const adminStatisticsModule = new AdminStatisticsModule();
+const userModule = new UserModule();
+const authModule = new AuthModule();
 
 // Importar rutas de la API (rutas originales)
 // app.use('/api/v1/auth', require('./routes/auth'));
@@ -108,6 +116,10 @@ app.use('/api/v1', childrenReadingsModule.getRouter());
 app.use('/api/v1', momsWeekModule.getRouter());
 app.use('/api/v1', diaryModule.getRouter());
 app.use('/api/v1', calendarModule.getRouter());
+app.use('/api/v1', faforeModule.getRouter());
+app.use('/api/v1', adminStatisticsModule.getRouter());
+app.use('/api/v1', userModule.getRouter());
+app.use('/api/v1', authModule.getRouter());
 
 
 // 404 - Ruta no encontrada

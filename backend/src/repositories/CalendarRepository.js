@@ -166,12 +166,17 @@ class CalendarRepository {
       notas_adicionales || null
     ];
 
-    // Verificar que no hay undefined
+    // Verificar que no hay undefined y convertir a null
     for (let i = 0; i < params.length; i++) {
       if (params[i] === undefined) {
         console.error(`Parámetro ${i} es undefined:`, params[i]);
         params[i] = null;
       }
+    }
+    
+    // Asegurar que recordatorio_activo sea un booleano válido
+    if (typeof params[8] !== 'boolean') {
+      params[8] = params[8] === 1 || params[8] === '1' || params[8] === true ? 1 : 0;
     }
     
     const result = await query(sql, params);

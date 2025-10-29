@@ -4,6 +4,7 @@
  */
 
 const educationalBookService = require('../services/EducationalBookService');
+const ResponseFormatter = require('../utils/ResponseFormatter');
 
 class EducationalBookController {
   /**
@@ -22,20 +23,17 @@ class EducationalBookController {
 
       const result = await educationalBookService.getBooks(filters);
       
-      res.json({
-        success: true,
-        message: 'Libros educativos obtenidos exitosamente',
-        data: result.data,
+      // Usar DTOs para formatear respuesta
+      const booksDTO = ResponseFormatter.formatEducationalBooks(result.data, 'list');
+      
+      res.json(ResponseFormatter.formatSuccessResponse({
+        books: booksDTO,
         total: result.total,
         filters: result.filters
-      });
+      }, 'Libros educativos obtenidos exitosamente'));
     } catch (error) {
       console.error('Error en getBooks:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error interno del servidor',
-        message: error.message
-      });
+      res.status(500).json(ResponseFormatter.formatErrorResponse(error));
     }
   }
 

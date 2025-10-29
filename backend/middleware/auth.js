@@ -13,10 +13,10 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
     
     const user = await query(
-      'SELECT id, nombre, email, rol_id, estado FROM usuarios WHERE id = ? AND estado = "activo"',
+      'SELECT id, user_id, nombre, apellido, email, tipo_usuario, activo FROM users WHERE user_id = ? AND activo = TRUE',
       [decoded.userId]
     );
 
@@ -54,7 +54,7 @@ const authenticateToken = async (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-  if (req.user.rol_id !== 1) {
+  if (!req.user || req.user.tipo_usuario !== 'admin') {
     return res.status(403).json({
       error: 'Acceso denegado',
       message: 'Se requieren permisos de administrador para acceder a este recurso'
@@ -69,9 +69,10 @@ const optionalAuth = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+      
       const user = await query(
-        'SELECT id, nombre, email, rol_id, estado FROM usuarios WHERE id = ? AND estado = "activo"',
+        'SELECT id, user_id, nombre, apellido, email, tipo_usuario, activo FROM users WHERE user_id = ? AND activo = TRUE',
         [decoded.userId]
       );
       
