@@ -3,8 +3,8 @@ const query = require('../../config/database');
 class AdminStatisticsRepository {
   constructor() {
     this.tables = {
-      users: 'users', // Tabla de usuarios que crearemos
-      events: 'calendar_events',
+      users: 'usuarios', // Tabla de usuarios (corregida)
+      events: 'eventos', // Tabla de eventos (corregida)
       pdfs: 'pdf_generados', // Tabla existente en la base de datos
       weeklyEntries: 'moms_week_entries'
     };
@@ -15,11 +15,11 @@ class AdminStatisticsRepository {
    */
   async getUserStats() {
     try {
-      // Contar usuarios totales (asumiendo tabla users)
+      // Contar usuarios totales (tabla usuarios)
       const totalQuery = `
         SELECT COUNT(*) as total 
         FROM ${this.tables.users} 
-        WHERE estado = 'generado'
+        WHERE estado = 'activo'
       `;
       const [totalResult] = await query(totalQuery);
       const total = totalResult.total;
@@ -28,9 +28,9 @@ class AdminStatisticsRepository {
       const thisMonthQuery = `
         SELECT COUNT(*) as esteMes 
         FROM ${this.tables.users} 
-        WHERE estado = 'generado' 
-        AND MONTH(fecha_generacion) = MONTH(CURRENT_DATE()) 
-        AND YEAR(fecha_generacion) = YEAR(CURRENT_DATE())
+        WHERE estado = 'activo' 
+        AND MONTH(created_at) = MONTH(CURRENT_DATE()) 
+        AND YEAR(created_at) = YEAR(CURRENT_DATE())
       `;
       const [thisMonthResult] = await query(thisMonthQuery);
       const esteMes = thisMonthResult.esteMes;
@@ -39,8 +39,8 @@ class AdminStatisticsRepository {
       const thisWeekQuery = `
         SELECT COUNT(*) as estaSemana 
         FROM ${this.tables.users} 
-        WHERE estado = 'generado' 
-        AND YEARWEEK(fecha_generacion) = YEARWEEK(CURRENT_DATE())
+        WHERE estado = 'activo' 
+        AND YEARWEEK(created_at) = YEARWEEK(CURRENT_DATE())
       `;
       const [thisWeekResult] = await query(thisWeekQuery);
       const estaSemana = thisWeekResult.estaSemana;
@@ -49,8 +49,8 @@ class AdminStatisticsRepository {
       const todayQuery = `
         SELECT COUNT(*) as hoy 
         FROM ${this.tables.users} 
-        WHERE estado = 'generado' 
-        AND DATE(fecha_generacion) = CURDATE()
+        WHERE estado = 'activo' 
+        AND DATE(created_at) = CURDATE()
       `;
       const [todayResult] = await query(todayQuery);
       const hoy = todayResult.hoy;
@@ -59,7 +59,7 @@ class AdminStatisticsRepository {
       const lastMonthQuery = `
         SELECT COUNT(*) as ultimoMes 
         FROM ${this.tables.users} 
-        WHERE estado = 'generado' 
+        WHERE estado = 'activo' 
         AND MONTH(created_at) = MONTH(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH)) 
         AND YEAR(created_at) = YEAR(DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH))
       `;
@@ -95,7 +95,7 @@ class AdminStatisticsRepository {
       const totalQuery = `
         SELECT COUNT(*) as total 
         FROM ${this.tables.events} 
-        WHERE estado = 'generado'
+        WHERE estado = "activo"
       `;
       const [totalResult] = await query(totalQuery);
       const total = totalResult.total;
@@ -103,9 +103,9 @@ class AdminStatisticsRepository {
       const thisMonthQuery = `
         SELECT COUNT(*) as esteMes 
         FROM ${this.tables.events} 
-        WHERE estado = 'generado' 
-        AND MONTH(fecha_generacion) = MONTH(CURRENT_DATE()) 
-        AND YEAR(fecha_generacion) = YEAR(CURRENT_DATE())
+        WHERE estado = "activo" 
+        AND MONTH(created_at) = MONTH(CURRENT_DATE()) 
+        AND YEAR(created_at) = YEAR(CURRENT_DATE())
       `;
       const [thisMonthResult] = await query(thisMonthQuery);
       const esteMes = thisMonthResult.esteMes;
@@ -113,8 +113,8 @@ class AdminStatisticsRepository {
       const thisWeekQuery = `
         SELECT COUNT(*) as estaSemana 
         FROM ${this.tables.events} 
-        WHERE estado = 'generado' 
-        AND YEARWEEK(fecha_generacion) = YEARWEEK(CURRENT_DATE())
+        WHERE estado = "activo" 
+        AND YEARWEEK(created_at) = YEARWEEK(CURRENT_DATE())
       `;
       const [thisWeekResult] = await query(thisWeekQuery);
       const estaSemana = thisWeekResult.estaSemana;
@@ -122,22 +122,22 @@ class AdminStatisticsRepository {
       const todayQuery = `
         SELECT COUNT(*) as hoy 
         FROM ${this.tables.events} 
-        WHERE estado = 'generado' 
-        AND DATE(fecha_generacion) = CURDATE()
+        WHERE estado = "activo" 
+        AND DATE(created_at) = CURDATE()
       `;
       const [todayResult] = await query(todayQuery);
       const hoy = todayResult.hoy;
 
       // Eventos por tipo
       const byTypeQuery = `
-        SELECT tipo_evento, COUNT(*) as cantidad 
+        SELECT tipo, COUNT(*) as cantidad 
         FROM ${this.tables.events} 
-        WHERE estado = 'generado' 
-        GROUP BY tipo_evento
+        WHERE estado = "activo" 
+        GROUP BY tipo
       `;
       const byTypeResults = await query(byTypeQuery);
       const porTipo = byTypeResults.reduce((acc, row) => {
-        acc[row.tipo_evento] = row.cantidad;
+        acc[row.tipo] = row.cantidad;
         return acc;
       }, {});
 
@@ -245,7 +245,7 @@ class AdminStatisticsRepository {
       const totalQuery = `
         SELECT COUNT(*) as total 
         FROM ${this.tables.weeklyEntries} 
-        WHERE estado = 'generado'
+        WHERE activo = TRUE
       `;
       const [totalResult] = await query(totalQuery);
       const total = totalResult.total;
@@ -253,7 +253,7 @@ class AdminStatisticsRepository {
       const thisMonthQuery = `
         SELECT COUNT(*) as esteMes 
         FROM ${this.tables.weeklyEntries} 
-        WHERE estado = 'generado' 
+        WHERE activo = TRUE 
         AND MONTH(fecha_entrada) = MONTH(CURRENT_DATE()) 
         AND YEAR(fecha_entrada) = YEAR(CURRENT_DATE())
       `;
@@ -263,7 +263,7 @@ class AdminStatisticsRepository {
       const thisWeekQuery = `
         SELECT COUNT(*) as estaSemana 
         FROM ${this.tables.weeklyEntries} 
-        WHERE estado = 'generado' 
+        WHERE activo = TRUE 
         AND YEARWEEK(fecha_entrada) = YEARWEEK(CURRENT_DATE())
       `;
       const [thisWeekResult] = await query(thisWeekQuery);
@@ -272,7 +272,7 @@ class AdminStatisticsRepository {
       const todayQuery = `
         SELECT COUNT(*) as hoy 
         FROM ${this.tables.weeklyEntries} 
-        WHERE estado = 'generado' 
+        WHERE activo = TRUE 
         AND DATE(fecha_entrada) = CURDATE()
       `;
       const [todayResult] = await query(todayQuery);
@@ -282,7 +282,7 @@ class AdminStatisticsRepository {
       const avgQuery = `
         SELECT COUNT(*) / 30 as promedioDiario 
         FROM ${this.tables.weeklyEntries} 
-        WHERE estado = 'generado' 
+        WHERE activo = TRUE 
         AND fecha_entrada >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
       `;
       const [avgResult] = await query(avgQuery);
@@ -317,7 +317,7 @@ class AdminStatisticsRepository {
           DATE_FORMAT(created_at, '%Y-%m') as mes,
           COUNT(*) as usuarios
         FROM ${this.tables.users} 
-        WHERE estado = 'generado' 
+        WHERE estado = 'activo' 
         AND created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH)
         GROUP BY DATE_FORMAT(created_at, '%Y-%m')
         ORDER BY mes ASC

@@ -19,6 +19,7 @@ import { Colors } from '../../../constants/colors';
 import { FontSizes, Spacing } from '../../../constants/dimensions';
 import { useDiary } from '../../../Hooks/useDiary';
 import { useMomsWeek } from '../../../Hooks/useMomsWeek';
+import { buildPdfUrl } from '../../../utils/pdfUtils';
 
 export default function VistaPdf() {
   const router = useRouter();
@@ -74,7 +75,8 @@ export default function VistaPdf() {
       console.log('✅ PDF generado:', result);
       
       if (result?.success && result?.data?.pdfUrl) {
-        const pdfUrl = `http://192.168.0.22:3000${result.data.pdfUrl}`;
+        // Usar la utilidad para construir la URL del PDF dinámicamente
+        const pdfUrl = buildPdfUrl(result.data.pdfUrl);
         console.log('📄 PDF URL:', pdfUrl);
         
         Alert.alert(

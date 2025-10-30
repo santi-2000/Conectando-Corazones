@@ -43,7 +43,10 @@ const query = async (sql, params = []) => {
       try {
         // Esperar un poco antes de reintentar
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const [rows] = await pool.execute(sql, params);
+        // Obtener una nueva conexión para el retry
+        const retryConnection = await pool.getConnection();
+        const [rows] = await retryConnection.execute(sql, params);
+        retryConnection.release();
         return rows;
       } catch (retryError) {
         console.error('❌ Error en reintento:', retryError);
