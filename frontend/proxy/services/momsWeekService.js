@@ -89,4 +89,22 @@ export const momsWeekService = {
       throw new Error(error.response?.data?.message || 'Error al generar libro semanal');
     }
   }
+
+  ,
+  /**
+   * Obtener el último PDF generado para el usuario
+   * @param {string} userId
+   * @returns {Promise<Object>}
+   */
+  async getLatestPdf(userId) {
+    try {
+      console.log('🔍 momsWeekService.getLatestPdf: Iniciando petición...');
+      const response = await apiClient.get(`/moms-week/${userId}/weekly-latest-pdf`);
+      console.log('✅ momsWeekService.getLatestPdf: Respuesta recibida:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ momsWeekService.getLatestPdf: Error:', error);
+      throw new Error(error.response?.data?.message || 'No hay PDFs generados aún');
+    }
+  }
 };

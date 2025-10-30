@@ -657,6 +657,33 @@ class PDFGeneratorService {
     const fileName = path.basename(filePath);
     return `http://localhost:3000/pdfs/${fileName}`;
   }
+
+  /**
+   * Obtener el PDF más reciente de un usuario
+   * @param {string} userId
+   * @returns {Promise<{filePath: string, url: string}|null>}
+   */
+  async getLatestUserPDF(userId) {
+    const fs = require('fs/promises');
+    const dir = this.outputDir;
+    try {
+      const files = await fs.readdir(dir);
+      const userFiles = files
+        .filter(name => name.startsWith(`diario-semanal-${userId}-semana-`))
+        .map(name => ({ name, full: path.join(dir, name) }));
+      if (userFiles.length === 0) return null;
+      // Ordenar por mtime desc
+      const withTimes = await Promise.all(userFiles.map(async f => {
+        const stat = await fs.stat(f.full);
+        return { ...f, mtimeMs: stat.mtimeMs };
+      }));
+      withTimes.sort((a, b) => b.mtimeMs - a.mtimeMs);
+      const latest = withTimes[0];
+      return { filePath: latest.full, url: this.getPublicURL(latest.full) };
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 module.exports = PDFGeneratorService;

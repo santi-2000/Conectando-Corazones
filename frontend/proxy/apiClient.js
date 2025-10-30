@@ -61,6 +61,9 @@ class ApiClient {
           throw new Error('No tienes permisos para realizar esta acción');
         case 404:
           throw new Error('Recurso no encontrado');
+        case 409:
+          // Conflicto (e.g., DUPLICATE_ENTRY): devolvemos el payload para que el caller decida
+          return { ...data, httpStatus: 409 };
         case 500:
           throw new Error('Error interno del servidor');
         default:
@@ -138,7 +141,10 @@ class ApiClient {
 
       return result;
     } catch (error) {
-      this.handleError(error);
+      const handled = this.handleError(error);
+      if (handled !== undefined) {
+        return handled;
+      }
     }
   }
 

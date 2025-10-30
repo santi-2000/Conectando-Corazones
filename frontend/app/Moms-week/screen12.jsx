@@ -38,33 +38,32 @@ export default function MiSemanaConMama() {
   // Hook para Diario (para generar PDF)
   const { generatePDF } = useDiary('test_review');
 
-  // Cargar datos al montar el componente
-  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-  // useEffect(() => {
-  //   console.log('🔄 Cargando datos de Moms Week...');
-  //   fetchCurrentWeek();
-  // }, []);
+  // Recargar datos cuando la pantalla entra en foco (sin dependencias para evitar loops)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchCurrentWeek();
+      if (currentWeek?.id) {
+        fetchWeekStats(currentWeek.id);
+      }
+    }, [currentWeek?.id])
+  );
 
-  // Cargar estadísticas cuando cambie la semana actual
-  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-  // useEffect(() => {
-  //   if (currentWeek?.id) {
-  //     console.log('📊 Cargando estadísticas de la semana:', currentWeek.id);
-  //     fetchWeekStats(currentWeek.id);
-  //   }
-  // }, [currentWeek]);
+  // No usamos useEffect adicional para evitar dobles disparos; solo useFocusEffect arriba
 
-  // Recargar datos cuando el componente se enfoque (cuando regrese de agregar entrada)
-  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     console.log('🔄 Pantalla enfocada, recargando datos...');
-  //     fetchCurrentWeek();
-  //     if (currentWeek?.id) {
-  //       fetchWeekStats(currentWeek.id);
-  //     }
-  //   }, []) // Remover dependencias para evitar bucle infinito
-  // );
+  const handleVerUltimoPDF = async () => {
+    try {
+      const resp = await momsWeekService.getLatestPdf('test_review');
+      const data = resp.data || resp;
+      const url = buildPdfUrl(data?.data?.pdfUrl || data?.pdfUrl);
+      if (url) {
+        Linking.openURL(url);
+      } else {
+        Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
+      }
+    } catch (e) {
+      Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
+    }
+  };
 
   const handleBack = () => {
     router.back();
@@ -324,6 +323,11 @@ export default function MiSemanaConMama() {
                 onPress={handleGenerarPDF}
                 variant="secondary"
                 style={styles.generarButton}
+              />
+              <Button
+                title="👀 Ver último PDF"
+                onPress={handleVerUltimoPDF}
+                variant="secondary"
               />
             </View>
           </View>

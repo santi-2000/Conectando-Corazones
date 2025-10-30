@@ -70,9 +70,11 @@ class DiaryController {
       };
 
       const result = await this.diaryService.saveDailyEntry(userId, entryData);
-      
+
       if (!result.success) {
-        return res.status(400).json(result);
+        // Manejar duplicado explícitamente con 409
+        const status = result.code === 'DUPLICATE_ENTRY' ? 409 : 400;
+        return res.status(status).json(result);
       }
 
       res.status(201).json(result);

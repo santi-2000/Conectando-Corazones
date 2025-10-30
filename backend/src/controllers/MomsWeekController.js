@@ -93,7 +93,12 @@ class MomsWeekController {
       const entryData = req.body;
       
       const result = await this.service.addDailyEntry(userId, entryData);
-      
+
+      if (!result.success) {
+        const status = result.code === 'DUPLICATE_ENTRY' ? 409 : 400;
+        return res.status(status).json(result);
+      }
+
       res.json({
         success: true,
         message: 'Entrada del día agregada exitosamente',
@@ -125,6 +130,28 @@ class MomsWeekController {
       });
     } catch (error) {
       console.error('Error en generateWeeklyBook:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * GET /moms-week/:userId/weekly-latest-pdf
+   * Obtener el PDF más reciente del usuario
+   */
+  async getLatestPDF(req, res) {
+    try {
+      const { userId } = req.params;
+      const result = await this.service.getLatestPDF(userId);
+      if (!result.success) {
+        return res.status(404).json(result);
+      }
+      res.json(result);
+    } catch (error) {
+      console.error('Error en getLatestPDF:', error);
       res.status(500).json({
         success: false,
         error: 'Error interno del servidor',

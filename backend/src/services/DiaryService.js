@@ -72,19 +72,23 @@ class DiaryService {
 
       // Verificar si ya existe una entrada para esta fecha
       const existingEntry = await this.diaryRepository.findByUserAndDate(userId, fecha);
-      
-      let result;
+
+      // Política Fase 2: impedir duplicados en misma fecha (pedir editar)
       if (existingEntry) {
-        // Actualizar entrada existente
-        result = await this.diaryRepository.update(existingEntry.id, diaryData);
-      } else {
-        // Crear nueva entrada
-        result = await this.diaryRepository.create(diaryData);
+        return {
+          success: false,
+          code: 'DUPLICATE_ENTRY',
+          message: 'Ya existe una entrada para este día. Edita la existente.',
+          data: existingEntry
+        };
       }
+
+      // Crear nueva entrada
+      const result = await this.diaryRepository.create(diaryData);
 
       return {
         success: true,
-        message: existingEntry ? 'Entrada actualizada exitosamente' : 'Entrada creada exitosamente',
+        message: 'Entrada creada exitosamente',
         data: result
       };
     } catch (error) {

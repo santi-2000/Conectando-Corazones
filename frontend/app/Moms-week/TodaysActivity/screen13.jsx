@@ -176,7 +176,20 @@ export default function TodaysActivity() {
 
       console.log('💾 Guardando entrada:', entryData);
       const result = await createEntry(entryData);
-      
+
+      // Manejar duplicado explícitamente (409)
+      if (result?.code === 'DUPLICATE_ENTRY') {
+        Alert.alert(
+          'Día ya registrado',
+          'Ya existe una entrada para hoy. ¿Quieres editarla?',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Editar', onPress: () => router.push('/Moms-week/ViewPreviuosDays/screen15') }
+          ]
+        );
+        return;
+      }
+
       Alert.alert(
         '¡Día guardado!', 
         'Tu entrada se ha guardado exitosamente. ¡Mamá estará muy feliz de leerla!',
@@ -184,14 +197,9 @@ export default function TodaysActivity() {
           {
             text: 'OK',
             onPress: () => {
-              // Limpiar formulario
               setText('');
               setSelectedEmotion(null);
               setPhotos([]);
-              // Recargar datos para actualizar la vista
-              // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-              // fetchEntries();
-              // Regresar a la pantalla anterior
               router.back();
             }
           }

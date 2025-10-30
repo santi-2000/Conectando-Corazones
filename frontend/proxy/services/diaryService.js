@@ -15,7 +15,11 @@ export const diaryService = {
       return response;
     } catch (error) {
       console.error('❌ diaryService.createEntry: Error:', error);
-      throw new Error(error.response?.data?.message || 'Error al crear entrada de diario');
+      // Si el apiClient devolvió un payload 409 ya normalizado, retornarlo sin lanzar
+      if (error?.httpStatus === 409 || error?.code === 'DUPLICATE_ENTRY') {
+        return error;
+      }
+      throw new Error(error.response?.data?.message || error.message || 'Error al crear entrada de diario');
     }
   },
 

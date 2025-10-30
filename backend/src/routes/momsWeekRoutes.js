@@ -107,6 +107,14 @@ router.post('/:userId/generate-pdf', optionalAuth, validateUserId, async (req, r
 });
 
 /**
+ * GET /moms-week/:userId/weekly-latest-pdf
+ * Obtener el PDF más reciente del usuario
+ */
+router.get('/:userId/weekly-latest-pdf', optionalAuth, validateUserId, async (req, res) => {
+  await controller.getLatestPDF(req, res);
+});
+
+/**
  * GET /moms-week/:userId/pdf-preview
  * Obtener vista previa del PDF (HTML)
  */

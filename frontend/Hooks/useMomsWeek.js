@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { momsWeekService } from '../proxy/services/momsWeekService';
 
 export const useMomsWeek = (userId = 'test_review') => {
@@ -7,34 +7,27 @@ export const useMomsWeek = (userId = 'test_review') => {
   const [weekHistory, setWeekHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const inFlightRef = useRef(false);
+  const debounceRef = useRef(null);
 
   const fetchCurrentWeek = async () => {
-    // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-    console.log('🔄 useMomsWeek: fetchCurrentWeek DESHABILITADO temporalmente');
-    return;
-    
-    // Evitar múltiples llamadas simultáneas
-    if (loading) {
-      console.log('🔄 useMomsWeek: Ya hay una petición en curso, saltando...');
+    if (inFlightRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => fetchCurrentWeek(), 300);
       return;
     }
-    
     try {
-      console.log('🔄 useMomsWeek: Iniciando fetchCurrentWeek...');
+      inFlightRef.current = true;
       setLoading(true);
       setError(null);
       const response = await momsWeekService.getCurrentWeek(userId);
-      console.log('✅ useMomsWeek: Respuesta recibida:', response);
       const data = response.data || response;
-      console.log('📊 useMomsWeek: Datos a guardar:', data);
       setCurrentWeek(data);
-      console.log('✅ useMomsWeek: currentWeek actualizado');
     } catch (err) {
-      console.error('❌ useMomsWeek: Error:', err);
       setError(err.message || 'Error al cargar semana actual');
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
-      console.log('🔄 useMomsWeek: Loading terminado');
     }
   };
 

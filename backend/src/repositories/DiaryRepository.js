@@ -23,15 +23,15 @@ class DiaryRepository {
     `;
 
     const params = [
-      diaryData.user_id,
-      diaryData.fecha,
-      diaryData.titulo,
-      diaryData.contenido,
-      JSON.stringify(diaryData.fotos),
-      diaryData.emocion,
-      diaryData.emocion_emoji,
-      JSON.stringify(diaryData.tags),
-      diaryData.estado
+      diaryData.user_id ?? null,
+      diaryData.fecha ?? null,
+      diaryData.titulo ?? null,
+      diaryData.contenido ?? null,
+      JSON.stringify(diaryData.fotos ?? []),
+      diaryData.emocion ?? null,
+      diaryData.emocion_emoji ?? null,
+      JSON.stringify(diaryData.tags ?? []),
+      diaryData.estado ?? null
     ];
 
     const result = await query(sql, params);

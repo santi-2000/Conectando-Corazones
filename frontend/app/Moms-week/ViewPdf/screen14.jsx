@@ -42,23 +42,15 @@ export default function VistaPdf() {
     fetchCurrentWeek 
   } = useMomsWeek('test_review');
 
-  // Cargar datos al montar el componente
-  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-  // useEffect(() => {
-  //   console.log('🔄 Cargando datos de Diario y Moms Week...');
-  //   fetchCurrentWeek();
-  //   fetchEntries();
-  // }, []);
+  // Refrescar datos al enfocar la pantalla (evita loops y asegura preview actualizada)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchCurrentWeek();
+      fetchEntries();
+    }, [])
+  );
 
-  // Recargar datos cuando el componente se enfoque (cuando regrese de agregar entrada)
-  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     console.log('🔄 Pantalla enfocada, recargando datos...');
-  //     fetchCurrentWeek();
-  //     fetchEntries();
-  //   }, []) // Remover dependencias para evitar bucle infinito
-  // );
+  // No se usa otro efecto para evitar dobles disparos
 
   const handleBack = () => {
     router.back();
@@ -93,6 +85,21 @@ export default function VistaPdf() {
     } catch (error) {
       console.error('❌ Error al generar PDF:', error);
       Alert.alert('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.');
+    }
+  };
+
+  const handleVerUltimoPDF = async () => {
+    try {
+      const resp = await momsWeekService.getLatestPdf('test_review');
+      const data = resp.data || resp;
+      const url = buildPdfUrl(data?.data?.pdfUrl || data?.pdfUrl);
+      if (url) {
+        Linking.openURL(url);
+      } else {
+        Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
+      }
+    } catch (e) {
+      Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
     }
   };
 
@@ -418,6 +425,11 @@ export default function VistaPdf() {
               onPress={handleGenerarPDF}
               variant="primary"
               style={styles.generateButton}
+            />
+            <Button
+              title="👀 Ver último PDF"
+              onPress={handleVerUltimoPDF}
+              variant="secondary"
             />
           </View>
         </ScrollView>

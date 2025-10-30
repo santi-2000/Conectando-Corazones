@@ -105,6 +105,18 @@ class MomsWeekService {
    */
   async addDailyEntry(userId, entryData) {
     try {
+      // Prevenir duplicados en el mismo día
+      const todayISO = new Date().toISOString().split('T')[0];
+      const existsToday = await this.repository.hasEntryForDate(userId, todayISO);
+      if (existsToday) {
+        return {
+          success: false,
+          code: 'DUPLICATE_ENTRY',
+          message: 'Ya existe una entrada para hoy. Edita la existente.',
+          data: null
+        };
+      }
+
       const entry = await this.repository.addDailyEntry(userId, entryData);
       
       return {
@@ -132,17 +144,23 @@ class MomsWeekService {
         bookData = await this.repository.generateWeeklyBook(userId, weekInfo.fechaInicio, weekInfo.fechaFin);
       }
       
-      // Generar el PDF real
+      // Adaptar datos para el generador (espera 'days')
+      const days = Array.isArray(bookData.entradas) ? bookData.entradas.map(e => ({
+        day: e.fecha || '',
+        emotion: e.emocion || null,
+        emotionName: e.emocion || null,
+        photo: (Array.isArray(e.fotos) && e.fotos.length > 0) ? '📸' : null,
+        text: e.contenido || e.titulo || '' ,
+        highlights: Array.isArray(e.tags) ? e.tags : []
+      })) : [];
+
+      // Generar el PDF real con el formato que consume el generador
       const pdfPath = await this.pdfGenerator.generateWeeklyDiaryPDF({
-        titulo: `Mi semana con mamá - Semana ${weekInfo.semana}`,
-        fecha: weekInfo.rango,
-        contenido: bookData,
-        estadisticas: {
-          totalEntradas: bookData.entradas.length,
-          totalFotos: bookData.fotos,
-          totalPalabras: bookData.palabras,
-          momentosFelices: bookData.momentosFelices
-        }
+        weekNumber: weekInfo.semana,
+        dateRange: weekInfo.rango,
+        childName: 'Sofia',
+        momName: 'Mamá',
+        days,
       }, userId);
       
       // Convertir ruta del archivo a URL accesible
@@ -165,6 +183,23 @@ class MomsWeekService {
       };
     } catch (error) {
       throw new Error(`Error al generar libro: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtener el PDF más reciente del usuario
+   * @param {string} userId
+   * @returns {Promise<Object>}
+   */
+  async getLatestPDF(userId) {
+    try {
+      const latest = await this.pdfGenerator.getLatestUserPDF(userId);
+      if (!latest) {
+        return { success: false, message: 'No hay PDFs generados aún', data: null };
+      }
+      return { success: true, data: { pdfUrl: this.pdfGenerator.getPublicURL(latest.filePath) } };
+    } catch (error) {
+      return { success: false, message: error.message, data: null };
     }
   }
 

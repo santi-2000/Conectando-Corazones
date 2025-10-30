@@ -11,6 +11,37 @@ class MomsWeekRepository {
   }
 
   /**
+   * Verificar si existe entrada para una fecha (por día)
+   * @param {string} userId
+   * @param {string} fechaISO - 'YYYY-MM-DD'
+   * @returns {Promise<boolean>}
+   */
+  async hasEntryForDate(userId, fechaISO) {
+    const sql = `
+      SELECT id FROM ${this.tableName}
+      WHERE user_id = ? AND DATE(fecha_entrada) = DATE(?) AND activo = TRUE
+      LIMIT 1
+    `;
+    const results = await query(sql, [userId, fechaISO]);
+    return results.length > 0;
+  }
+
+  /**
+   * Verificar si ya existe entrada hoy
+   * @param {string} userId
+   * @returns {Promise<boolean>}
+   */
+  async hasEntryToday(userId) {
+    const sql = `
+      SELECT id FROM ${this.tableName}
+      WHERE user_id = ? AND DATE(fecha_entrada) = CURDATE() AND activo = TRUE
+      LIMIT 1
+    `;
+    const results = await query(sql, [userId]);
+    return results.length > 0;
+  }
+
+  /**
    * Obtener días completados en una semana
    * @param {string} userId 
    * @param {string} fechaInicio 

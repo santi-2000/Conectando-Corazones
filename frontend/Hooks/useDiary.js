@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { diaryService } from '../proxy/services/diaryService';
 
 export const useDiary = (userId = 'test_review') => {
@@ -6,34 +6,28 @@ export const useDiary = (userId = 'test_review') => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const inFlightRef = useRef(false);
+  const debounceRef = useRef(null);
 
   const fetchEntries = async (filters = {}) => {
-    // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-    console.log('🔄 useDiary: fetchEntries DESHABILITADO temporalmente');
-    return;
-    
-    // Evitar múltiples llamadas simultáneas
-    if (loading) {
-      console.log('🔄 useDiary: Ya hay una petición en curso, saltando...');
+    if (inFlightRef.current) {
+      console.log('🔄 useDiary: petición en curso, debounce...');
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => fetchEntries(filters), 300);
       return;
     }
-    
     try {
-      console.log('🔄 useDiary: Iniciando fetchEntries...');
+      inFlightRef.current = true;
       setLoading(true);
       setError(null);
       const response = await diaryService.getEntries(userId, filters);
-      console.log('✅ useDiary: Respuesta recibida:', response);
       const data = response.data || response;
-      console.log('📊 useDiary: Datos a guardar:', data);
       setEntries(Array.isArray(data) ? data : []);
-      console.log('✅ useDiary: entries actualizado');
     } catch (err) {
-      console.error('❌ useDiary: Error:', err);
       setError(err.message || 'Error al cargar entradas del diario');
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
-      console.log('🔄 useDiary: Loading terminado');
     }
   };
 
@@ -58,30 +52,17 @@ export const useDiary = (userId = 'test_review') => {
   };
 
   const createEntry = async (entryData) => {
-    // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-    console.log('🔄 useDiary: createEntry DESHABILITADO temporalmente');
-    return { success: true, message: 'Función deshabilitada temporalmente' };
-    
     try {
-      console.log('🔄 useDiary: Iniciando createEntry...');
       setLoading(true);
       setError(null);
       const response = await diaryService.createEntry(userId, entryData);
-      console.log('✅ useDiary: Respuesta recibida:', response);
       const data = response.data || response;
-      console.log('📊 useDiary: Datos a guardar:', data);
-      // Actualizar la lista de entradas después de crear
-      // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-      // await fetchEntries();
-      console.log('✅ useDiary: createEntry completado');
       return data;
     } catch (err) {
-      console.error('❌ useDiary: Error:', err);
       setError(err.message || 'Error al crear entrada del diario');
       throw err;
     } finally {
       setLoading(false);
-      console.log('🔄 useDiary: Loading terminado');
     }
   };
 
@@ -132,25 +113,16 @@ export const useDiary = (userId = 'test_review') => {
   };
 
   const generatePDF = async (filters = {}) => {
-    // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-    console.log('🔄 useDiary: generatePDF DESHABILITADO temporalmente');
-    return { success: true, message: 'Función deshabilitada temporalmente' };
-    
     try {
-      console.log('🔄 useDiary: Iniciando generatePDF...');
       setLoading(true);
       setError(null);
       const response = await diaryService.generatePDF(userId, filters);
-      console.log('✅ useDiary: Respuesta recibida:', response);
-      console.log('✅ useDiary: generatePDF completado');
-      return response; // Devolver la respuesta completa, no solo data
+      return response;
     } catch (err) {
-      console.error('❌ useDiary: Error:', err);
       setError(err.message || 'Error al generar PDF del diario');
       throw err;
     } finally {
       setLoading(false);
-      console.log('🔄 useDiary: Loading terminado');
     }
   };
 
