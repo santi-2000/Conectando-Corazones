@@ -13,9 +13,23 @@ export const useCalendar = (userId = 'test_review') => {
       setError(null);
       const response = await calendarService.getEvents(userId, filters);
       console.log('✅ useCalendar: Respuesta recibida:', response);
-      const data = response.data || response;
-      console.log('📊 useCalendar: Datos a guardar:', data);
-      setEvents(Array.isArray(data) ? data : []);
+      
+      // El backend puede devolver { success: true, data: { eventos: [...] } }
+      let eventsData = [];
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          eventsData = response.data;
+        } else if (response.data.eventos && Array.isArray(response.data.eventos)) {
+          eventsData = response.data.eventos;
+        } else if (Array.isArray(response.data.data)) {
+          eventsData = response.data.data;
+        }
+      } else if (Array.isArray(response)) {
+        eventsData = response;
+      }
+      
+      console.log('📊 useCalendar: Eventos extraídos:', eventsData.length);
+      setEvents(eventsData);
       console.log('✅ useCalendar: events actualizado');
     } catch (err) {
       console.error('❌ useCalendar: Error:', err);

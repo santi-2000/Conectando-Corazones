@@ -70,43 +70,41 @@ export default function Statistics() {
             {/* Usuarios Activos */}
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>👥</Text>
-              <Text style={styles.statNumber}>1,247</Text>
+              <Text style={styles.statNumber}>12</Text>
               <Text style={styles.statLabel}>Usuarios Activos</Text>
             </View>
 
             {/* Eventos Creados */}
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>📅</Text>
-              <Text style={styles.statNumber}>89</Text>
+              <Text style={styles.statNumber}>15</Text>
               <Text style={styles.statLabel}>Eventos Creados</Text>
             </View>
 
             {/* PDFs Creados */}
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>📄</Text>
-              <Text style={styles.statNumber}>1,247</Text>
+              <Text style={styles.statNumber}>25</Text>
               <Text style={styles.statLabel}>PDFs Creados</Text>
             </View>
 
             {/* Entradas Semanales */}
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>📖</Text>
-              <Text style={styles.statNumber}>456</Text>
+              <Text style={styles.statNumber}>29</Text>
               <Text style={styles.statLabel}>Entradas Semanales</Text>
             </View>
           </View>
 
           {/* Charts Section */}
           <View style={styles.chartsSection}>
-            <Text style={styles.sectionTitle}>📈 Gráficos de Uso</Text>
+            <Text style={styles.sectionTitle}>📈Estadisticas de Uso</Text>
             
             <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>Actividad Mensual</Text>
               <View style={styles.chartPlaceholder}>
                 <Text style={styles.chartText}>📊 Gráfico de barras</Text>
-                <Text style={styles.chartSubtext}>Enero: 1,200 usuarios</Text>
-                <Text style={styles.chartSubtext}>Febrero: 1,450 usuarios</Text>
-                <Text style={styles.chartSubtext}>Marzo: 1,680 usuarios</Text>
+                <Text style={styles.chartSubtext}>Octubre: 12 usuarios</Text>
               </View>
             </View>
 
@@ -114,10 +112,9 @@ export default function Statistics() {
               <Text style={styles.chartTitle}>PDFs Creados</Text>
               <View style={styles.chartPlaceholder}>
                 <Text style={styles.chartText}>📄 Reporte de PDFs</Text>
-                <Text style={styles.chartSubtext}>Esta semana: 23 PDFs</Text>
-                <Text style={styles.chartSubtext}>Este mes: 89 PDFs</Text>
-                <Text style={styles.chartSubtext}>Total acumulado: 1,247 PDFs</Text>
-                <Text style={styles.chartSubtext}>Promedio diario: 4.2 PDFs</Text>
+                <Text style={styles.chartSubtext}>Esta semana: 25 PDFs</Text>
+                <Text style={styles.chartSubtext}>Este mes: 25 PDFs</Text>
+                <Text style={styles.chartSubtext}>Total acumulado: 25 PDFs</Text>
               </View>
             </View>
           </View>

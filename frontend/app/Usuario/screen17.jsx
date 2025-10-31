@@ -146,14 +146,6 @@ export default function PerfilUsuario() {
                 </View>
               )}
             </View>
-
-            {/* Save Button */}
-            <Button
-              title="Guardar"
-              onPress={handleSave}
-              variant="primary"
-              style={styles.saveButton}
-            />
           </View>
         </ScrollView>
       </LinearGradient>

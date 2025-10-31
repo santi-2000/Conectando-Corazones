@@ -105,6 +105,15 @@ export default function AgregarFecha() {
   ];
 
   const importanceLevels = ['Alto', 'Medio', 'Bajo'];
+  
+  const eventTypes = [
+    { label: 'Familiar', value: 'familiar' },
+    { label: 'Deportivo', value: 'deportivo' },
+    { label: 'Recordatorio', value: 'recordatorio' },
+    { label: 'Médico', value: 'medico' },
+    { label: 'Educativo', value: 'educativo' },
+    { label: 'Diferente', value: 'diferente' }
+  ];
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();

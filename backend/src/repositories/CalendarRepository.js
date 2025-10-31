@@ -93,8 +93,13 @@ class CalendarRepository {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "activo")
     `;
 
+    // Validar que userId no sea undefined o null
+    if (!userId || (typeof userId === 'string' && userId.trim() === '')) {
+      throw new Error('userId es requerido y no puede estar vacío');
+    }
+
     const params = [
-      userId, 
+      String(userId), // Asegurar que sea string
       titulo || null, 
       descripcion || null, 
       inicio || null, 
@@ -104,6 +109,8 @@ class CalendarRepository {
       recordatorio_minutos || 0, 
       ubicacion || null
     ];
+
+    console.log('📅 CalendarRepository.create: userId:', userId, 'params:', params);
 
     const result = await query(sql, params);
     return this.findById(result.insertId);

@@ -8,9 +8,10 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  Alert
+  Alert,
+  Modal
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../../components/Button';
 import { Colors } from '../../constants/colors';
@@ -22,6 +23,8 @@ export default function Calendario() {
   const [imageError, setImageError] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventModal, setShowEventModal] = useState(false);
   const [showDebug, setShowDebug] = useState(true);
 
   // Hook para Calendario
@@ -46,7 +49,23 @@ export default function Calendario() {
   useEffect(() => {
     console.log('🔄 Cargando eventos del calendario...');
     fetchEvents();
-  }, []); 
+  }, []);
+
+  // Refrescar eventos cuando la pantalla se enfoca (después de crear un evento)
+  // Usar useRef para evitar bucle infinito
+  const fetchEventsRef = React.useRef(fetchEvents);
+  fetchEventsRef.current = fetchEvents;
+  
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 screen4: Pantalla enfocada, refrescando eventos...');
+      // Usar un pequeño delay para evitar múltiples llamadas simultáneas
+      const timeoutId = setTimeout(() => {
+        fetchEventsRef.current();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }, []) // Array vacío para que solo se ejecute una vez al montar/enfocar
+  ); 
 
   const handleBack = () => {
     router.back();
@@ -61,9 +80,25 @@ export default function Calendario() {
     router.push('/Calendario/Newdate/screen5');
   };
 
-  const handleDatePress = (date) => {
-    setSelectedDate(date);
-    console.log('Fecha seleccionada:', date);
+  const handleDatePress = (day) => {
+    setSelectedDate(day);
+    const dateKey = formatDateKey(day);
+    
+    // Buscar el evento completo en el array de events
+    const fullEvent = events.find(e => {
+      const eventDateKey = e.inicio ? e.inicio.split('T')[0] : 
+                          (e.fecha_evento ? e.fecha_evento.split('T')[0] : 
+                          (e.fecha_inicio ? e.fecha_inicio.split('T')[0] : ''));
+      return eventDateKey === dateKey;
+    });
+    
+    if (fullEvent) {
+      setSelectedEvent(fullEvent);
+      setShowEventModal(true);
+      console.log('📅 Evento seleccionado:', fullEvent);
+    } else {
+      console.log('📅 Fecha seleccionada sin evento:', dateKey);
+    }
   };
 
   const handleImageError = () => {
@@ -84,46 +119,73 @@ export default function Calendario() {
 
   // Convertir eventos del backend a formato del calendario
   const eventsMap = {};
+  
+  console.log('📅 screen4: Procesando eventos, cantidad:', events?.length || 0, 'tipo:', Array.isArray(events) ? 'array' : typeof events);
+  
   if (events && Array.isArray(events) && events.length > 0) {
-    events.forEach(event => {
-      // El backend puede devolver eventos directamente o dentro de data.eventos
-      const eventData = event.eventos ? event.eventos : (Array.isArray(event) ? event : [event]);
-      const eventsArray = Array.isArray(eventData) ? eventData : [eventData];
+    events.forEach((e, index) => {
+      console.log(`📅 screen4: Evento ${index}:`, JSON.stringify({ id: e.id, titulo: e.titulo, inicio: e.inicio, tipo: e.tipo }));
       
-      eventsArray.forEach(e => {
-        // Intentar diferentes campos de fecha
-        let dateKey = '';
-        if (e.fecha_evento) {
-          dateKey = e.fecha_evento.split('T')[0];
-        } else if (e.fecha_inicio) {
-          dateKey = e.fecha_inicio.split('T')[0];
-        } else if (e.fecha) {
-          dateKey = e.fecha.split('T')[0];
-        }
+      // El backend devuelve eventos con campo 'inicio' (DATETIME)
+      let dateKey = '';
+      if (e.inicio) {
+        dateKey = e.inicio.split('T')[0]; // Extraer YYYY-MM-DD de YYYY-MM-DD HH:mm:ss
+      } else if (e.fecha_evento) {
+        dateKey = e.fecha_evento.split('T')[0];
+      } else if (e.fecha_inicio) {
+        dateKey = e.fecha_inicio.split('T')[0];
+      } else if (e.fecha) {
+        dateKey = e.fecha.split('T')[0];
+      }
+      
+      if (dateKey) {
+        // Mapear el tipo de la BD (evento_familiar) al tipo del frontend (familiar)
+        const tipoMap = {
+          'evento_familiar': 'familiar',
+          'evento_deportivo': 'deportivo',
+          'recordatorio_personal': 'recordatorio',
+          'evento_diferente': 'diferente',
+          'cita_medica': 'medico',
+          'reunion_escolar': 'educativo'
+        };
+        const tipoFrontend = tipoMap[e.tipo] || e.tipo || 'diferente';
         
-        if (dateKey) {
-          eventsMap[dateKey] = {
-            type: e.tipo_evento || 'diferente',
-            color: e.color || '#4A90E2',
-            title: e.titulo || 'Evento',
-            id: e.id
-          };
-        }
-      });
+        console.log(`✅ screen4: Evento mapeado para ${dateKey}:`, { tipo: tipoFrontend, titulo: e.titulo });
+        eventsMap[dateKey] = {
+          type: tipoFrontend,
+          color: e.color || '#4A90E2',
+          title: e.titulo || 'Evento',
+          id: e.id
+        };
+      } else {
+        console.warn(`⚠️ screen4: No se pudo extraer fecha del evento:`, e);
+      }
     });
-  } else if (events && events.eventos && Array.isArray(events.eventos)) {
+  } else if (events && typeof events === 'object' && events.eventos && Array.isArray(events.eventos)) {
     // Si events es un objeto con propiedad eventos
     events.eventos.forEach(event => {
       let dateKey = '';
-      if (event.fecha_evento) {
+      if (event.inicio) {
+        dateKey = event.inicio.split('T')[0];
+      } else if (event.fecha_evento) {
         dateKey = event.fecha_evento.split('T')[0];
       } else if (event.fecha_inicio) {
         dateKey = event.fecha_inicio.split('T')[0];
       }
       
       if (dateKey) {
+        const tipoMap = {
+          'evento_familiar': 'familiar',
+          'evento_deportivo': 'deportivo',
+          'recordatorio_personal': 'recordatorio',
+          'evento_diferente': 'diferente',
+          'cita_medica': 'medico',
+          'reunion_escolar': 'educativo'
+        };
+        const tipoFrontend = tipoMap[event.tipo] || event.tipo || 'diferente';
+        
         eventsMap[dateKey] = {
-          type: event.tipo_evento || 'diferente',
+          type: tipoFrontend,
           color: event.color || '#4A90E2',
           title: event.titulo || 'Evento',
           id: event.id
@@ -131,6 +193,8 @@ export default function Calendario() {
       }
     });
   }
+  
+  console.log('📅 screen4: eventsMap final:', Object.keys(eventsMap).length, 'fechas:', Object.keys(eventsMap));
 
   // Datos de eventos simulados como fallback
   const fallbackEvents = {
@@ -360,33 +424,6 @@ export default function Calendario() {
             </View>
           </View>
 
-          {/* Event Legend */}
-          <View style={styles.legendContainer}>
-            <Text style={styles.legendTitle}>Leyenda de Eventos</Text>
-            <View style={styles.legendItems}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#FF69B4' }]} />
-                <Text style={styles.legendText}>Evento Dif</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#FF4500' }]} />
-                <Text style={styles.legendText}>Visita al penitencial</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#90EE90' }]} />
-                <Text style={styles.legendText}>Evento Deportivo</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#FFD700' }]} />
-                <Text style={styles.legendText}>Evento Familiar</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#4A90E2' }]} />
-                <Text style={styles.legendText}>Recordatorio</Text>
-              </View>
-            </View>
-          </View>
-
           {/* Add Date Button */}
           <Button
             title="Agregar fecha"
@@ -396,6 +433,109 @@ export default function Calendario() {
           />
         </ScrollView>
       </LinearGradient>
+
+      {/* Modal de Detalles del Evento */}
+      <Modal
+        visible={showEventModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEventModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Detalles del Evento</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => {
+                  setShowEventModal(false);
+                  setSelectedEvent(null);
+                }}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedEvent && (
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                {/* Título */}
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalLabel}>Título</Text>
+                  <Text style={styles.modalValue}>{selectedEvent.titulo || 'Sin título'}</Text>
+                </View>
+
+                {/* Descripción */}
+                {selectedEvent.descripcion && (
+                  <View style={styles.modalSection}>
+                    <Text style={styles.modalLabel}>Descripción</Text>
+                    <Text style={styles.modalValue}>{selectedEvent.descripcion}</Text>
+                  </View>
+                )}
+
+                {/* Fecha y Hora */}
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalLabel}>Fecha</Text>
+                  {selectedEvent.inicio && (
+                    <Text style={styles.modalValue}>
+                      {new Date(selectedEvent.inicio).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </Text>
+                  )}
+                  {selectedEvent.inicio && selectedEvent.inicio.includes('T') && !selectedEvent.inicio.includes('00:00:00') && (
+                    <Text style={styles.modalTime}>
+                      Hora: {new Date(selectedEvent.inicio).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Tipo de Evento */}
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalLabel}>Tipo</Text>
+                  <View style={styles.modalTypeContainer}>
+                    <View style={[styles.modalTypeDot, { backgroundColor: selectedEvent.color || '#4A90E2' }]} />
+                    <Text style={styles.modalValue}>
+                      {selectedEvent.tipo === 'evento_familiar' || selectedEvent.tipo === 'familiar' ? 'Familiar' :
+                       selectedEvent.tipo === 'evento_deportivo' || selectedEvent.tipo === 'deportivo' ? 'Deportivo' :
+                       selectedEvent.tipo === 'recordatorio_personal' || selectedEvent.tipo === 'recordatorio' ? 'Recordatorio' :
+                       selectedEvent.tipo === 'cita_medica' || selectedEvent.tipo === 'medico' ? 'Médico' :
+                       selectedEvent.tipo === 'reunion_escolar' || selectedEvent.tipo === 'educativo' ? 'Educativo' :
+                       'Diferente'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Ubicación */}
+                {selectedEvent.ubicacion && (
+                  <View style={styles.modalSection}>
+                    <Text style={styles.modalLabel}>Ubicación</Text>
+                    <Text style={styles.modalValue}>📍 {selectedEvent.ubicacion}</Text>
+                  </View>
+                )}
+
+                {/* Botones de Acción */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.modalButtonSecondary]}
+                    onPress={() => {
+                      setShowEventModal(false);
+                      setSelectedEvent(null);
+                    }}
+                  >
+                    <Text style={styles.modalButtonTextSecondary}>Cerrar</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -580,42 +720,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  legendContainer: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  legendTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: 'bold',
-    color: Colors.text.primary,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
-  legendItems: {
-    gap: Spacing.sm,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: Spacing.sm,
-  },
-  legendText: {
-    fontSize: FontSizes.md,
-    color: Colors.text.primary,
-  },
   addDateButton: {
     backgroundColor: '#4A90E2',
     borderRadius: 20,
@@ -679,5 +783,107 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     color: Colors.text.primary,
     fontWeight: 'bold',
+  },
+  // Modal de Evento
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    width: '90%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: FontSizes.xl,
+    fontWeight: 'bold',
+    color: Colors.text.primary,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 20,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    padding: Spacing.lg,
+  },
+  modalSection: {
+    marginBottom: Spacing.lg,
+  },
+  modalLabel: {
+    fontSize: FontSizes.sm,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalValue: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
+    lineHeight: 22,
+  },
+  modalTime: {
+    fontSize: FontSizes.sm,
+    color: '#666',
+    marginTop: Spacing.xs,
+  },
+  modalTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+  },
+  modalTypeDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: Spacing.sm,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: Spacing.xl,
+    paddingTop: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  modalButton: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: 20,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  modalButtonSecondary: {
+    backgroundColor: '#F0F0F0',
+  },
+  modalButtonTextSecondary: {
+    fontSize: FontSizes.md,
+    color: Colors.text.primary,
+    fontWeight: '600',
   },
 });
