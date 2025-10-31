@@ -77,4 +77,13 @@ router.get('/:userId/weekly-days',
   diaryController.getWeeklyDays.bind(diaryController)
 );
 
+// Purga de entradas
+router.delete('/:userId/weekly',
+  diaryController.purgeWeekly.bind(diaryController)
+);
+
+router.delete('/:userId/all',
+  diaryController.purgeAll.bind(diaryController)
+);
+
 module.exports = router;

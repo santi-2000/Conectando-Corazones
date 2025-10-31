@@ -20,9 +20,16 @@ export const useDiary = (userId = 'test_review') => {
       inFlightRef.current = true;
       setLoading(true);
       setError(null);
-      const response = await diaryService.getEntries(userId, filters);
-      const data = response.data || response;
-      setEntries(Array.isArray(data) ? data : []);
+      // Forzar actualización sin caché
+      const response = await diaryService.getEntries(userId, { ...filters, noCache: true });
+      const payload = response?.data || response;
+      const dataEntries = Array.isArray(payload?.entries) ? payload.entries : [];
+      console.log('✅ useDiary: Entradas actualizadas:', dataEntries.length);
+      setEntries(dataEntries);
+      // opcional: si vienen estadísticas en el mismo payload
+      if (payload?.estadisticas) {
+        setStats(payload.estadisticas);
+      }
     } catch (err) {
       setError(err.message || 'Error al cargar entradas del diario');
     } finally {
@@ -56,9 +63,43 @@ export const useDiary = (userId = 'test_review') => {
       setLoading(true);
       setError(null);
       const response = await diaryService.createEntry(userId, entryData);
-      const data = response.data || response;
+      
+      // Verificar si es un error 409 (duplicado) - diaryService lo retorna sin lanzar
+      if (response?.httpStatus === 409 || response?.code === 'DUPLICATE_ENTRY') {
+        console.log('⚠️ useDiary: createEntry retornó error 409, lanzando...');
+        throw response; // Lanzar para que screen15 lo maneje correctamente
+      }
+      
+      // Si la respuesta tiene success: false, es un error
+      if (response?.success === false) {
+        console.log('⚠️ useDiary: createEntry retornó success: false, lanzando...');
+        throw response;
+      }
+      
+      // Extraer los datos - puede venir como response.data o directamente como objeto de entrada
+      let data;
+      if (response?.data) {
+        // Si viene envuelto en { success: true, data: {...} }
+        data = response.data;
+      } else if (response?.id && response?.fecha) {
+        // Si viene directamente como objeto de entrada (id, fecha, contenido, etc.)
+        data = response;
+      } else {
+        // Fallback: usar response tal cual
+        data = response;
+      }
+      
+      // Actualizar la lista de entradas después de crear
+      setTimeout(() => {
+        fetchEntries();
+      }, 100);
+      
       return data;
     } catch (err) {
+      // Si es un 409, re-lanzarlo tal cual para que screen15 lo maneje
+      if (err?.httpStatus === 409 || err?.code === 'DUPLICATE_ENTRY') {
+        throw err;
+      }
       setError(err.message || 'Error al crear entrada del diario');
       throw err;
     } finally {
@@ -68,25 +109,30 @@ export const useDiary = (userId = 'test_review') => {
 
   const updateEntry = async (entryId, entryData) => {
     try {
-      console.log('🔄 useDiary: Iniciando updateEntry...');
+      console.log('🔄 useDiary.updateEntry: Iniciando...', { entryId, entryData });
       setLoading(true);
       setError(null);
       const response = await diaryService.updateEntry(userId, entryId, entryData);
-      console.log('✅ useDiary: Respuesta recibida:', response);
+      console.log('✅ useDiary.updateEntry: Respuesta recibida:', response);
       const data = response.data || response;
-      console.log('📊 useDiary: Datos a guardar:', data);
+      console.log('📊 useDiary.updateEntry: Datos actualizados:', data);
+      
       // Actualizar la lista de entradas después de actualizar
-      // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-      // await fetchEntries();
-      console.log('✅ useDiary: updateEntry completado');
+      // Esperar un momento para asegurar que el backend terminó de procesar
+      setTimeout(() => {
+        console.log('🔄 useDiary.updateEntry: Refrescando entradas...');
+        fetchEntries();
+      }, 200);
+      
+      console.log('✅ useDiary.updateEntry: Completado, refresh programado');
       return data;
     } catch (err) {
-      console.error('❌ useDiary: Error:', err);
+      console.error('❌ useDiary.updateEntry: Error:', err);
       setError(err.message || 'Error al actualizar entrada del diario');
       throw err;
     } finally {
       setLoading(false);
-      console.log('🔄 useDiary: Loading terminado');
+      console.log('🔄 useDiary.updateEntry: Loading terminado');
     }
   };
 

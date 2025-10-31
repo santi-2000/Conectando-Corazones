@@ -1,4 +1,31 @@
 import apiClient from '../apiClient';
+import { uploadService } from './uploadService';
+
+async function ensureUploadedPhotos(entryData) {
+  if (!entryData || !entryData.fotos) return entryData;
+  const fotos = entryData.fotos;
+  const result = [];
+  for (const f of fotos) {
+    if (!f) continue;
+    if (typeof f === 'object' && f.url) {
+      result.push(f);
+      continue;
+    }
+    if (typeof f === 'string') {
+      const isRemote = f.startsWith('http://') || f.startsWith('https://') || f.startsWith('/');
+      if (isRemote) {
+        result.push({ url: f });
+      } else if (f.startsWith('file:')) {
+        const url = await uploadService.uploadPhoto(f);
+        if (url) result.push({ url });
+      } else {
+        // nombre suelto -> usar como caption
+        result.push({ caption: f });
+      }
+    }
+  }
+  return { ...entryData, fotos: result };
+}
 
 export const diaryService = {
   /**
@@ -10,7 +37,8 @@ export const diaryService = {
   async createEntry(userId, entryData) {
     try {
       console.log('🔍 diaryService.createEntry: Iniciando petición...');
-      const response = await apiClient.post(`/diary/${userId}/daily-entry`, entryData);
+      const prepared = await ensureUploadedPhotos(entryData);
+      const response = await apiClient.post(`/diary/${userId}/daily-entry`, prepared);
       console.log('✅ diaryService.createEntry: Respuesta recibida:', response);
       return response;
     } catch (error) {
@@ -31,9 +59,15 @@ export const diaryService = {
    */
   async getEntries(userId, filters = {}) {
     try {
-      console.log('🔍 diaryService.getEntries: Iniciando petición...');
-      const response = await apiClient.get(`/diary/${userId}/weekly`, { params: filters });
-      console.log('✅ diaryService.getEntries: Respuesta recibida:', response);
+      console.log('🔍 diaryService.getEntries: Iniciando petición...', filters);
+      // Si noCache está en filters, asegurar que se agregue timestamp a la URL
+      const params = { ...filters };
+      if (params.noCache) {
+        params._t = Date.now();
+        delete params.noCache;
+      }
+      const response = await apiClient.get(`/diary/${userId}/weekly`, { params });
+      console.log('✅ diaryService.getEntries: Respuesta recibida:', response?.data?.entries?.length || 0, 'entradas');
       return response;
     } catch (error) {
       console.error('❌ diaryService.getEntries: Error:', error);
@@ -69,7 +103,8 @@ export const diaryService = {
   async updateEntry(userId, entryId, entryData) {
     try {
       console.log('🔍 diaryService.updateEntry: Iniciando petición...');
-      const response = await apiClient.put(`/diary/${userId}/entries/${entryId}`, entryData);
+      const prepared = await ensureUploadedPhotos(entryData);
+      const response = await apiClient.put(`/diary/${userId}/entries/${entryId}`, prepared);
       console.log('✅ diaryService.updateEntry: Respuesta recibida:', response);
       return response;
     } catch (error) {
@@ -102,10 +137,12 @@ export const diaryService = {
    * @param {string} weekId - ID de la semana (opcional)
    * @returns {Promise<Object>}
    */
-  async generatePDF(userId, weekId = null) {
+  async generatePDF(userId, pdfData = null) {
     try {
       console.log('🔍 diaryService.generatePDF: Iniciando petición...');
-      const response = await apiClient.post(`/diary/${userId}/generate-pdf`, { weekId });
+      // Si pdfData está presente, enviarlo directamente; si no, usar método anterior
+      const payload = pdfData ? { pdfData } : {};
+      const response = await apiClient.post(`/diary/${userId}/generate-pdf`, payload);
       console.log('✅ diaryService.generatePDF: Respuesta recibida:', response);
       return response;
     } catch (error) {

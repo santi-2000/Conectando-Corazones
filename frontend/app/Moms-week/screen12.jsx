@@ -20,6 +20,7 @@ import { FontSizes, Spacing } from '../../constants/dimensions';
 import { useMomsWeek } from '../../Hooks/useMomsWeek';
 import { useDiary } from '../../Hooks/useDiary';
 import { buildPdfUrl } from '../../utils/pdfUtils';
+import { momsWeekService } from '../../proxy/services/momsWeekService';
 
 export default function MiSemanaConMama() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function MiSemanaConMama() {
       const data = resp.data || resp;
       const url = buildPdfUrl(data?.data?.pdfUrl || data?.pdfUrl);
       if (url) {
-        Linking.openURL(url);
+        router.push(`/Moms-week/ViewPdf/screen14?pdf=${encodeURIComponent(url)}`);
       } else {
         Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
       }
@@ -76,34 +77,6 @@ export default function MiSemanaConMama() {
   const handleAgregarEntrada = () => {
     console.log('Agregar entrada de hoy');
     router.push('/Moms-week/TodaysActivity/screen13');
-  };
-
-  const handleGenerarPDF = async () => {
-    try {
-      console.log('🔄 Generando PDF...');
-      const result = await generatePDF();
-      console.log('✅ PDF generado:', result);
-      
-      if (result?.success && result?.data?.pdfUrl) {
-        // Usar la utilidad para construir la URL del PDF dinámicamente
-        const pdfUrl = buildPdfUrl(result.data.pdfUrl);
-        console.log('📄 PDF URL:', pdfUrl);
-        
-        Alert.alert(
-          'PDF Generado Exitosamente', 
-          'Tu libro semanal ha sido generado. ¿Quieres verlo ahora?',
-          [
-            { text: 'Ver PDF', onPress: () => Linking.openURL(pdfUrl) },
-            { text: 'Más tarde', style: 'cancel' }
-          ]
-        );
-      } else {
-        Alert.alert('Error', 'No se pudo obtener la URL del PDF generado.');
-      }
-    } catch (error) {
-      console.error('❌ Error al generar PDF:', error);
-      Alert.alert('Error', 'No se pudo generar el PDF. Inténtalo de nuevo.');
-    }
   };
 
   // Función para calcular la semana actual del año
@@ -161,22 +134,9 @@ export default function MiSemanaConMama() {
   const currentWeekNumber = getCurrentWeekNumber();
   const currentWeekRange = getCurrentWeekRange();
 
-  const getMotivationalMessage = () => {
-    const percentage = Math.round((weeklyStats.daysCompleted / weeklyStats.totalDays) * 100);
-    if (percentage >= 100) return "🎉 ¡Semana completa! ¡Eres increíble!";
-    if (percentage >= 70) return "🌟 ¡Vas súper bien! ¡Sigue así!";
-    if (percentage >= 40) return "💪 ¡Buen progreso! ¡Continúa!";
-    return "✨ ¡Empieza tu semana con mamá!";
-  };
-
-  // const handleVistaPreviaDias = () => {
-  //   console.log('Ver días anteriores');
-  //   router.push('/Moms-week/ViewPreviuosDays/screen15');
-  // };
-
   const handleVistaPreviaPDF = () => {
-    console.log('Ver preview PDF');
-    router.push('/Moms-week/ViewPdf/screen14');
+    console.log('Ver preview/editar días');
+    router.push('/Moms-week/ViewPreviuosDays/screen15');
   };
 
   const handleImageError = () => {
@@ -240,7 +200,7 @@ export default function MiSemanaConMama() {
         <View style={styles.titleSection}>
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Mi semana con mama</Text>
-            <Text style={styles.heartIcon}>💌</Text>
+            <Text style={styles.heartIcon}></Text>
             <View style={styles.plannerIcon}>
               {!imageError ? (
                 <Image 
@@ -284,31 +244,6 @@ export default function MiSemanaConMama() {
             <Text style={styles.cardText}>
               📅 Semana {currentWeekNumber} ({currentWeekRange})
             </Text>
-            <Text style={styles.progressText}>
-              {weeklyStats.daysCompleted} de {weeklyStats.totalDays} días completados
-            </Text>
-            
-            {/* Motivational Message */}
-            <View style={styles.motivationContainer}>
-              <Text style={styles.motivationText}>{getMotivationalMessage()}</Text>
-            </View>
-
-            {/* Weekly Stats */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{weeklyStats.photos}</Text>
-                <Text style={styles.statLabel}>📸 Fotos</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{weeklyStats.words}</Text>
-                <Text style={styles.statLabel}>📝 Palabras</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{weeklyStats.emotions.happy + weeklyStats.emotions.excited}</Text>
-                <Text style={styles.statLabel}>😊 Feliz</Text>
-              </View>
-            </View>
-
             {/* Action Buttons */}
             <View style={styles.buttonsContainer}>
               <Button
@@ -316,13 +251,6 @@ export default function MiSemanaConMama() {
                 onPress={handleAgregarEntrada}
                 variant="primary"
                 style={styles.agregarButton}
-              />
-
-              <Button
-                title="📄 Generar mi libro semanal"
-                onPress={handleGenerarPDF}
-                variant="secondary"
-                style={styles.generarButton}
               />
               <Button
                 title="👀 Ver último PDF"
@@ -332,33 +260,15 @@ export default function MiSemanaConMama() {
             </View>
           </View>
 
-          {/* Information Text */}
-          <Text style={styles.infoText}>
-            📚 Solo podrás generar tu libro semanal cuando completes todos los días
-          </Text>
-
               {/* Bottom Navigation Cards */}
               <View style={styles.bottomCards}>
-                {/* <TouchableOpacity 
-                  style={styles.bottomCard}
-                  onPress={handleVistaPreviaDias}
-                >
-                  <Text style={styles.bottomCardEmoji}>📖</Text>
-                  <Text style={styles.bottomCardText}>
-                    Ver mis días anteriores
-                  </Text>
-                  <Text style={styles.bottomCardSubtext}>
-                    Revisa lo que escribiste
-                  </Text>
-                </TouchableOpacity> */}
-
                 <TouchableOpacity 
-                  style={[styles.bottomCard, styles.singleCard]}
+                  style={[styles.bottomCard, styles.singleCard, styles.centeredCard]}
                   onPress={handleVistaPreviaPDF}
                 >
                   <Text style={styles.bottomCardEmoji}>👀</Text>
                   <Text style={styles.bottomCardText}>
-                    Vista previa del libro
+                    Vista previa (editar días)
                   </Text>
                   <Text style={styles.bottomCardSubtext}>
                     Mira cómo se verá y edita
@@ -408,7 +318,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   titleContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -417,7 +326,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xxl,
     fontWeight: 'bold',
     color: Colors.text.primary,
-    marginRight: Spacing.sm,
+    textAlign: 'center',
   },
   heartIcon: {
     fontSize: 24,
@@ -429,7 +338,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   plannerIcon: {
-    marginLeft: Spacing.md,
+    marginTop: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   plannerImage: {
     width: 40,
@@ -498,6 +409,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.md,
   },
   calendarIcon: {
@@ -519,50 +431,13 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: Spacing.sm,
     lineHeight: 22,
+    textAlign: 'center',
   },
   progressText: {
     fontSize: FontSizes.md,
     color: Colors.text.secondary,
     marginBottom: Spacing.lg,
     textAlign: 'center',
-  },
-  motivationContainer: {
-    backgroundColor: '#FFF0F5',
-    borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-    borderWidth: 2,
-    borderColor: '#FF6B9D',
-  },
-  motivationText: {
-    fontSize: FontSizes.md,
-    color: '#FF6B9D',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#F0F8FF',
-    borderRadius: 12,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-    borderWidth: 2,
-    borderColor: '#4A90E2',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: FontSizes.xl,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-  },
-  statLabel: {
-    fontSize: FontSizes.sm,
-    color: '#4A90E2',
-    fontWeight: '500',
-    marginTop: Spacing.xs,
   },
   buttonsContainer: {
     gap: Spacing.md,
@@ -571,15 +446,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF6B9D',
     borderRadius: 20,
     shadowColor: '#FF6B9D',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  generarButton: {
-    backgroundColor: '#4A90E2',
-    borderRadius: 20,
-    shadowColor: '#4A90E2',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -596,6 +462,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
     marginBottom: Spacing.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centeredCard: {
+    alignSelf: 'center',
   },
   bottomCard: {
     flex: 1,

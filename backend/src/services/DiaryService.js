@@ -253,7 +253,101 @@ class DiaryService {
   }
 
   /**
-   * Generar PDF del diario
+   * Generar PDF del diario usando datos exactos de screen14
+   * @param {string} userId 
+   * @param {Object} pdfData - Datos exactos de screen14
+   * @returns {Object}
+   */
+  async generatePDFFromData(userId, pdfData) {
+    try {
+      console.log('🔍 DiaryService.generatePDFFromData: Usando datos de screen14');
+      
+      const MomsWeekService = require('./MomsWeekService');
+      const momsWeekService = new MomsWeekService();
+      
+      // Convertir datos de screen14 al formato que espera el generador
+      // pdfData tiene: weekNumber, dateRange, childName, momName, days[]
+      // days[] tiene: dayNumber, dayName, fecha, emotion, photos[], text, tags[]
+      
+      const fechaInicio = pdfData.days && pdfData.days.length > 0 
+        ? pdfData.days[0].fecha 
+        : null;
+      
+      // Convertir days al formato esperado por PDFGeneratorService
+      const daysForPDF = pdfData.days.map(day => ({
+        dia: day.dayNumber, // 1-7
+        emociones: day.emotion ? [day.emotion] : [],
+        tags: Array.isArray(day.tags) ? day.tags : [],
+        fotos: Array.isArray(day.photos) && day.photos.length > 0 ? day.photos.map(p => {
+          // Log para debugging
+          console.log('🖼️ DiaryService: Procesando foto para PDF:', p);
+          
+          if (typeof p === 'string') {
+            return p.startsWith('/') || p.startsWith('http') ? { url: p } : { caption: p };
+          }
+          if (typeof p === 'object') {
+            // Si ya es un objeto con url, mantenerlo
+            if (p.url) {
+              return { url: p.url, caption: p.caption || '' };
+            }
+            // Si es objeto pero sin url, usar como caption
+            return { caption: String(p) || '' };
+          }
+          return { caption: String(p) || '' };
+        }).filter(f => f && (f.url || f.caption)) : [],
+        comentarios: day.text && day.text !== 'Día pendiente' ? [day.text] : []
+      }));
+      
+      const pdfDataForGenerator = {
+        weekNumber: pdfData.weekNumber,
+        dateRange: pdfData.dateRange,
+        fechaInicio: fechaInicio,
+        childName: pdfData.childName || 'Sofia',
+        momName: pdfData.momName || 'Mamá',
+        days: daysForPDF
+      };
+      
+      console.log('📊 Datos convertidos para PDF:', {
+        weekNumber: pdfDataForGenerator.weekNumber,
+        daysCount: pdfDataForGenerator.days.length,
+        fechaInicio: pdfDataForGenerator.fechaInicio
+      });
+      
+      // Log detallado de fotos
+      pdfDataForGenerator.days.forEach((day, idx) => {
+        if (day.fotos && day.fotos.length > 0) {
+          console.log(`📸 DiaryService: Día ${day.dia} tiene ${day.fotos.length} fotos:`, day.fotos.map(f => f.url || f));
+        }
+      });
+      
+      // Generar PDF directamente usando PDFGeneratorService
+      const PDFGeneratorService = require('./PDFGeneratorService');
+      const pdfGenerator = new PDFGeneratorService();
+      const pdfPath = await pdfGenerator.generateWeeklyDiaryPDF(pdfDataForGenerator, userId);
+      const pdfUrl = pdfGenerator.getPublicURL(pdfPath);
+      
+      return {
+        success: true,
+        message: 'PDF generado exitosamente',
+        data: {
+          titulo: `Mi semana con mamá - Semana ${pdfData.weekNumber}`,
+          fecha: pdfData.dateRange,
+          pdfUrl: pdfUrl,
+          estadisticas: {
+            totalEntradas: pdfData.days.filter(d => d.entry).length,
+            totalFotos: pdfData.days.reduce((acc, d) => acc + (Array.isArray(d.photos) ? d.photos.length : 0), 0),
+            totalPalabras: pdfData.days.reduce((acc, d) => acc + (d.text ? d.text.length : 0), 0)
+          }
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error en generatePDFFromData:', error);
+      throw new Error(`Error al generar PDF: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generar PDF del diario (método tradicional desde BD)
    * @param {string} userId 
    * @param {string} weekId 
    * @returns {Object}
@@ -338,6 +432,31 @@ class DiaryService {
   }
 
   /**
+   * Eliminar entradas de la semana actual del usuario
+   */
+  async purgeWeeklyEntries(userId) {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Lunes
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Domingo
+
+    const startDate = startOfWeek.toISOString().split('T')[0];
+    const endDate = endOfWeek.toISOString().split('T')[0];
+    const affected = await this.diaryRepository.deleteByUserAndDateRange(userId, startDate, endDate);
+    return { success: true, data: { affectedRows: affected, startDate, endDate } };
+  }
+
+  /**
+   * Eliminar todas las entradas del usuario
+   */
+  async purgeAllEntries(userId) {
+    // Usar un rango amplio
+    const affected = await this.diaryRepository.deleteByUserAndDateRange(userId, '1900-01-01', '2999-12-31');
+    return { success: true, data: { affectedRows: affected } };
+  }
+
+  /**
    * Obtener entrada específica por ID
    * @param {string} userId
    * @param {string} entryId
@@ -384,10 +503,13 @@ class DiaryService {
    */
   async updateEntry(userId, entryId, entryData) {
     try {
+      console.log('🔍 DiaryService.updateEntry: Iniciando...', { userId, entryId, entryData });
+      
       // Verificar que la entrada existe y pertenece al usuario
       const existingEntry = await this.diaryRepository.findById(entryId);
 
       if (!existingEntry) {
+        console.log('❌ DiaryService.updateEntry: Entrada no encontrada');
         return {
           success: false,
           message: 'No se encontró la entrada',
@@ -396,6 +518,7 @@ class DiaryService {
       }
 
       if (existingEntry.user_id && existingEntry.user_id !== userId) {
+        console.log('❌ DiaryService.updateEntry: Sin permisos');
         return {
           success: false,
           message: 'No tienes permisos para editar esta entrada',
@@ -403,18 +526,20 @@ class DiaryService {
         };
       }
 
-      // Preparar datos para actualizar
+      // Preparar datos para actualizar (evitar undefined -> usar null/[])
       const updateData = {
-        titulo: entryData.titulo || existingEntry.titulo,
-        contenido: entryData.contenido || existingEntry.contenido,
-        fotos: entryData.fotos || existingEntry.fotos || [],
-        emocion: entryData.emocion || existingEntry.emocion,
-        emocion_emoji: entryData.emocion_emoji || existingEntry.emocion_emoji,
-        tags: entryData.tags || existingEntry.tags || [],
+        titulo: entryData.titulo !== undefined ? entryData.titulo : (existingEntry.titulo ?? null),
+        contenido: entryData.contenido !== undefined ? entryData.contenido : (existingEntry.contenido ?? null),
+        fotos: entryData.fotos !== undefined ? entryData.fotos : (existingEntry.fotos ?? []),
+        emocion: entryData.emocion !== undefined ? entryData.emocion : (existingEntry.emocion ?? null),
+        emocion_emoji: entryData.emocion_emoji !== undefined ? entryData.emocion_emoji : (existingEntry.emocion_emoji ?? null),
+        tags: entryData.tags !== undefined ? entryData.tags : (existingEntry.tags ?? []),
         estado: 'completado'
       };
 
+      console.log('📝 DiaryService.updateEntry: Datos a actualizar:', updateData);
       const result = await this.diaryRepository.update(entryId, updateData);
+      console.log('✅ DiaryService.updateEntry: Entrada actualizada:', result);
 
       return {
         success: true,
@@ -422,7 +547,7 @@ class DiaryService {
         data: result
       };
     } catch (error) {
-      console.error('Error en updateEntry:', error);
+      console.error('❌ DiaryService.updateEntry: Error:', error);
       throw new Error(`Error al actualizar entrada: ${error.message}`);
     }
   }

@@ -112,9 +112,17 @@ class DiaryController {
       if (!startDate || !endDate) {
         const today = new Date();
         const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Lunes
+        // Calcular lunes de la semana actual
+        const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Si es domingo, retroceder 6 días
+        startOfWeek.setDate(today.getDate() + mondayOffset);
+        
+        // Expandir el rango para incluir días anteriores si hay entradas
+        // Retroceder 1 día adicional para incluir el domingo anterior si es necesario
+        startOfWeek.setDate(startOfWeek.getDate() - 1);
+        
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // Domingo
+        endOfWeek.setDate(startOfWeek.getDate() + 7); // Incluir 8 días total (del domingo anterior al domingo actual)
 
         startDate = startOfWeek.toISOString().split('T')[0];
         endDate = endOfWeek.toISOString().split('T')[0];
@@ -231,7 +239,7 @@ class DiaryController {
     try {
       console.log('🔍 DiaryController.generatePDF llamada con:', req.params, req.body);
       const { userId } = req.params;
-      const { weekId } = req.body;
+      const { weekId, pdfData } = req.body;
 
       if (!userId) {
         console.log('❌ userId no proporcionado');
@@ -243,7 +251,10 @@ class DiaryController {
       }
 
       console.log('📄 Generando PDF para usuario:', userId);
-      const result = await this.diaryService.generatePDF(userId, weekId);
+      // Si viene pdfData desde screen14, usarlo directamente; si no, usar método tradicional
+      const result = pdfData 
+        ? await this.diaryService.generatePDFFromData(userId, pdfData)
+        : await this.diaryService.generatePDF(userId, weekId);
       console.log('✅ PDF generado:', result.success);
 
       if (!result.success) {
@@ -395,6 +406,34 @@ class DiaryController {
         error: 'Error interno del servidor',
         message: error.message
       });
+    }
+  }
+
+  /**
+   * DELETE /api/v1/diary/:userId/weekly
+   * Eliminar entradas de la semana actual
+   */
+  async purgeWeekly(req, res) {
+    try {
+      const { userId } = req.params;
+      const result = await this.diaryService.purgeWeeklyEntries(userId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Error interno del servidor', message: error.message });
+    }
+  }
+
+  /**
+   * DELETE /api/v1/diary/:userId/all
+   * Eliminar todas las entradas del usuario
+   */
+  async purgeAll(req, res) {
+    try {
+      const { userId } = req.params;
+      const result = await this.diaryService.purgeAllEntries(userId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Error interno del servidor', message: error.message });
     }
   }
 }

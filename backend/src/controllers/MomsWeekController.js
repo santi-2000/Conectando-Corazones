@@ -424,6 +424,27 @@ class MomsWeekController {
       });
     }
   }
+
+  /**
+   * DELETE /moms-week/:userId/pdfs
+   * Eliminar PDFs del usuario (opcionalmente por semana ?week=NN)
+   */
+  async purgePDFs(req, res) {
+    try {
+      const { userId } = req.params;
+      const week = req.query.week ? parseInt(req.query.week, 10) : null;
+      const w = Number.isNaN(week) ? null : week;
+      const files = await this.service.purgePDFs(userId, w);
+      let db = { data: { affectedRows: 0 } };
+      if (req.query.db === 'true') {
+        db = await this.service.purgePDFRecords(userId, w);
+      }
+      res.json({ success: true, message: 'PDFs eliminados', data: { files: files.data, db: db.data } });
+    } catch (error) {
+      console.error('Error en purgePDFs:', error);
+      res.status(500).json({ success: false, error: 'Error interno del servidor', message: error.message });
+    }
+  }
 }
 
 module.exports = MomsWeekController;

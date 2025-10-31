@@ -109,6 +109,9 @@ export default function FaforeScreen() {
     );
   }
 
+  // Asegurar estructura plana para la vista (el hook guarda { success, message, data })
+  const info = faforeInfo?.data || faforeInfo || {};
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -143,15 +146,15 @@ export default function FaforeScreen() {
                 <Text style={styles.logoText}>{faforeInfo?.nombre || 'FAFORE'}</Text>
               </View>
             )}
-            <Text style={styles.organizationName}>{faforeInfo?.nombre || 'FAFORE'}</Text>
-            <Text style={styles.organizationSubtitle}>{faforeInfo?.subtitulo || 'Familia, Fortaleza Y Reinserción A.C.'}</Text>
+            <Text style={styles.organizationName}>{info?.nombre || 'FAFORE'}</Text>
+            <Text style={styles.organizationSubtitle}>{info?.subtitulo || 'Familia, Fortaleza Y Reinserción A.C.'}</Text>
           </View>
 
           {/* Mission Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🎯 Nuestra Misión</Text>
             <Text style={styles.sectionContent}>
-              {faforeInfo?.mision || 'Trabajamos para fortalecer los lazos familiares y apoyar la reinserción social, brindando herramientas y recursos que promuevan el bienestar integral de las familias y comunidades.'}
+              {info?.mision || 'Trabajamos para fortalecer los lazos familiares y apoyar la reinserción social, brindando herramientas y recursos que promuevan el bienestar integral de las familias y comunidades.'}
             </Text>
           </View>
 
@@ -159,7 +162,7 @@ export default function FaforeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>👁️ Nuestra Visión</Text>
             <Text style={styles.sectionContent}>
-              {faforeInfo?.vision || 'Ser una organización líder en la promoción de la unidad familiar y la reinserción social, creando un impacto positivo y duradero en las comunidades que servimos.'}
+              {info?.vision || 'Ser una organización líder en la promoción de la unidad familiar y la reinserción social, creando un impacto positivo y duradero en las comunidades que servimos.'}
             </Text>
           </View>
 
@@ -167,8 +170,8 @@ export default function FaforeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>💎 Nuestros Valores</Text>
             <View style={styles.valuesList}>
-              {faforeInfo?.valores && faforeInfo.valores.length > 0 ? (
-                faforeInfo.valores.map((valor, index) => (
+              {info?.valores && info.valores.length > 0 ? (
+                info.valores.map((valor, index) => (
                   <Text key={index} style={styles.valueItem}>• {valor}</Text>
                 ))
               ) : (
@@ -190,35 +193,35 @@ export default function FaforeScreen() {
             <View style={styles.contactCard}>
               <TouchableOpacity 
                 style={styles.contactItem}
-                onPress={() => handleCall(faforeInfo?.contacto?.telefono || '+52 55 1234 5678')}
+                onPress={() => handleCall(info?.contacto?.telefono || '+52 55 1234 5678')}
               >
                 <Text style={styles.contactIcon}>📞</Text>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactLabel}>Teléfono</Text>
-                  <Text style={styles.contactValue}>{faforeInfo?.contacto?.telefono || '+52 55 1234 5678'}</Text>
+                  <Text style={styles.contactValue}>{info?.contacto?.telefono || '+52 55 1234 5678'}</Text>
                 </View>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={styles.contactItem}
-                onPress={() => handleEmail(faforeInfo?.contacto?.email || 'contacto@fafore.org')}
+                onPress={() => handleEmail(info?.contacto?.email || 'contacto@fafore.org')}
               >
                 <Text style={styles.contactIcon}>✉️</Text>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactLabel}>Email</Text>
-                  <Text style={styles.contactValue}>{faforeInfo?.contacto?.email || 'contacto@fafore.org'}</Text>
+                  <Text style={styles.contactValue}>{info?.contacto?.email || 'contacto@fafore.org'}</Text>
                 </View>
               </TouchableOpacity>
 
-              {faforeInfo?.redesSociales?.sitio_web && faforeInfo.redesSociales.sitio_web.trim() !== '' && (
+              {info?.redesSociales?.sitio_web && info.redesSociales.sitio_web.trim() !== '' && (
                 <TouchableOpacity 
                   style={styles.contactItem}
-                  onPress={() => handleWebsite(faforeInfo.redesSociales.sitio_web)}
+                  onPress={() => handleWebsite(info.redesSociales.sitio_web)}
                 >
                   <Text style={styles.contactIcon}>🌐</Text>
                   <View style={styles.contactInfo}>
                     <Text style={styles.contactLabel}>Sitio Web</Text>
-                    <Text style={styles.contactValue}>{faforeInfo.redesSociales.sitio_web}</Text>
+                    <Text style={styles.contactValue}>{info.redesSociales.sitio_web}</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -230,7 +233,7 @@ export default function FaforeScreen() {
                 <Text style={styles.contactIcon}>📍</Text>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactLabel}>Dirección</Text>
-                  <Text style={styles.contactValue}>{faforeInfo?.contacto?.direccion || 'Av. Reforma 123, CDMX'}</Text>
+                  <Text style={styles.contactValue}>{info?.contacto?.direccion || 'Av. Reforma 123, CDMX'}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -240,8 +243,8 @@ export default function FaforeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🛠️ Nuestros Servicios</Text>
             <View style={styles.servicesList}>
-              {faforeInfo?.servicios && faforeInfo.servicios.length > 0 ? (
-                faforeInfo.servicios
+              {info?.servicios && info.servicios.length > 0 ? (
+                info.servicios
                   .filter(servicio => servicio.nombre !== 'Salud') // Filtrar "Salud"
                   .map((servicio, index) => (
                     <View key={index} style={styles.serviceItem}>

@@ -127,6 +127,22 @@ class DiaryRepository {
   }
 
   /**
+   * Eliminar entradas por usuario y rango de fechas
+   * @param {string} userId
+   * @param {string} fechaInicio
+   * @param {string} fechaFin
+   * @returns {number} affectedRows
+   */
+  async deleteByUserAndDateRange(userId, fechaInicio, fechaFin) {
+    const sql = `
+      DELETE FROM ${this.tableName}
+      WHERE user_id = ? AND fecha BETWEEN ? AND ?
+    `;
+    const res = await query(sql, [userId, fechaInicio, fechaFin]);
+    return res.affectedRows || 0;
+  }
+
+  /**
    * Buscar entradas por usuario con paginación
    * @param {string} userId 
    * @param {number} limit 
@@ -230,7 +246,8 @@ class DiaryRepository {
       contenido: entry.contenido,
       fotos: this.parseJson(entry.fotos),
       emocion: entry.emocion,
-      emocionEmoji: entry.emocion_emoji,
+      emocion_emoji: entry.emocion_emoji, // Mantener snake_case para compatibilidad con frontend
+      emocionEmoji: entry.emocion_emoji, // También mantener camelCase para compatibilidad
       tags: this.parseJson(entry.tags),
       estado: entry.estado,
       createdAt: entry.created_at,
@@ -254,11 +271,16 @@ class DiaryRepository {
       
       // Si es string, intentar parsearlo
       if (typeof jsonString === 'string') {
-        // Si parece ser una URL o texto plano, devolverlo como array
-        if (jsonString.startsWith('http') || jsonString.includes(',')) {
-          return jsonString.split(',').map(item => item.trim());
+        const trimmed = jsonString.trim();
+        // Si es JSON válido (empieza con [ o {), parsear
+        if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+          return JSON.parse(trimmed);
         }
-        return JSON.parse(jsonString);
+        // Caso contrario, tratar como lista simple separada por comas o URL única
+        if (trimmed.startsWith('http') || trimmed.includes(',')) {
+          return trimmed.split(',').map(item => item.trim());
+        }
+        return [trimmed];
       }
       
       return [];

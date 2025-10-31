@@ -44,8 +44,7 @@ class ApiClient {
    * Maneja errores de respuesta HTTP
    */
   handleError(error) {
-    console.error('Error en API Client:', error);
-    
+    // Evitar spamear consola para errores esperados (p.ej. 409)
     if (error.response) {
       // Error de respuesta del servidor
       const { status, data } = error.response;
@@ -65,7 +64,7 @@ class ApiClient {
           // Conflicto (e.g., DUPLICATE_ENTRY): devolvemos el payload para que el caller decida
           return { ...data, httpStatus: 409 };
         case 500:
-          throw new Error('Error interno del servidor');
+          throw new Error(data.message || 'Error interno del servidor');
         default:
           throw new Error(data.message || 'Error desconocido');
       }
@@ -150,7 +149,21 @@ class ApiClient {
 
   // Métodos HTTP específicos
   async get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'GET' });
+    // Construir URL con parámetros de query
+    let finalEndpoint = endpoint;
+    if (options.params) {
+      const params = new URLSearchParams();
+      Object.keys(options.params).forEach(key => {
+        if (options.params[key] !== undefined && options.params[key] !== null) {
+          params.append(key, options.params[key]);
+        }
+      });
+      const queryString = params.toString();
+      if (queryString) {
+        finalEndpoint = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${queryString}`;
+      }
+    }
+    return this.request(finalEndpoint, { ...options, method: 'GET' });
   }
 
   async post(endpoint, data, options = {}) {

@@ -8,6 +8,9 @@ const fs = require('fs').promises;
 const path = require('path');
 const moment = require('moment');
 
+// Base pública para construir URLs absolutas accesibles desde el dispositivo
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+
 class PDFGeneratorService {
   constructor() {
     this.outputDir = path.join(__dirname, '../../public/pdfs');
@@ -35,15 +38,48 @@ class PDFGeneratorService {
     try {
       const browser = await puppeteer.launch({
         headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-web-security',
+          '--allow-running-insecure-content'
+        ]
       });
 
       const page = await browser.newPage();
       
+      // Configurar timeout más largo para cargar imágenes
+      page.setDefaultTimeout(30000); // 30 segundos
+      
       // Generar HTML con diseño bonito
       const html = this.generateBeautifulHTML(data);
       
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      // Establecer contenido y esperar a que todas las imágenes se carguen
+      await page.setContent(html, { 
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+      
+      // Esperar a que todas las imágenes se carguen completamente
+      try {
+        await page.evaluate(() => {
+          return Promise.all(
+            Array.from(document.images)
+              .filter(img => !img.complete)
+              .map(img => new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                // Timeout de 10 segundos por imagen
+                setTimeout(() => reject(new Error('Timeout')), 10000);
+              }))
+          );
+        });
+      } catch (error) {
+        console.warn('⚠️ Algunas imágenes no se cargaron, continuando:', error.message);
+      }
+      
+      // Esperar adicional para asegurar que las imágenes se carguen (usar setTimeout en lugar de waitForTimeout)
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo adicionales
       
       // Generar nombre único para el archivo
       const weekNumber = data.weekNumber || moment().week();
@@ -141,6 +177,7 @@ class PDFGeneratorService {
     const childName = data.childName || 'Mi hijo/a';
     const momName = data.momName || 'Mamá';
     const days = data.days || [];
+    const fechaInicio = data.fechaInicio || null; // Para calcular semana correcta
 
     return `
     <!DOCTYPE html>
@@ -318,7 +355,7 @@ class PDFGeneratorService {
             
             .photos-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 15px;
                 margin-bottom: 20px;
             }
@@ -329,6 +366,19 @@ class PDFGeneratorService {
                 border-radius: 10px;
                 text-align: center;
                 box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 180px;
+            }
+            
+            .photo-item img {
+                max-width: 100%;
+                max-height: 200px;
+                object-fit: contain !important;
+                border-radius: 8px;
+                margin-bottom: 10px;
             }
             
             .photo-placeholder {
@@ -527,7 +577,7 @@ class PDFGeneratorService {
             
             <div class="days-section">
                 <h3>Días de la Semana</h3>
-                ${this.generateDaysHTML(days)}
+                ${this.generateDaysHTML(days, fechaInicio)}
             </div>
             
             <div class="footer">
@@ -544,14 +594,24 @@ class PDFGeneratorService {
   /**
    * Generar HTML para los días de la semana (7 días completos, solo fotos, comentarios y emociones)
    * @param {Array} days - Array de días
+   * @param {string} fechaInicio - Fecha de inicio de la semana (YYYY-MM-DD)
    * @returns {string} - HTML de los días
    */
-  generateDaysHTML(days) {
+  generateDaysHTML(days, fechaInicio = null) {
     // Generar los 7 días de la semana (lunes a domingo)
     const weekDays = [];
-    const currentDate = new Date();
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Lunes
+    let startOfWeek;
+    
+    if (fechaInicio) {
+      // Usar la fecha de inicio proporcionada (desde las entradas reales)
+      const [y, m, d] = fechaInicio.split('-').map(n => parseInt(n, 10));
+      startOfWeek = new Date(y, m - 1, d);
+    } else {
+      // Fallback: calcular desde fecha actual
+      const currentDate = new Date();
+      startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Lunes
+    }
     
     for (let i = 0; i < 7; i++) {
       const dayDate = new Date(startOfWeek);
@@ -564,6 +624,27 @@ class PDFGeneratorService {
       // Buscar si hay datos para este día
       const dayData = days.find(d => d.dia === dayNumber) || {};
       
+      // Procesar fotos para asegurar formato correcto
+      let photos = [];
+      if (Array.isArray(dayData.fotos) && dayData.fotos.length > 0) {
+        photos = dayData.fotos.map(photo => {
+          // Si es string, convertir a objeto
+          if (typeof photo === 'string') {
+            return { url: photo.startsWith('/') || photo.startsWith('http') ? photo : null, caption: '' };
+          }
+          // Si es objeto, asegurar que tenga url
+          if (typeof photo === 'object' && photo !== null) {
+            return {
+              url: photo.url || null,
+              caption: photo.caption || ''
+            };
+          }
+          return null;
+        }).filter(p => p && p.url); // Filtrar fotos sin URL
+      }
+      
+      console.log(`📸 PDFGenerator: Día ${dayNumber} tiene ${photos.length} fotos:`, photos.map(p => p.url));
+      
       weekDays.push({
         dayNumber,
         dayName,
@@ -571,7 +652,7 @@ class PDFGeneratorService {
         dateObj: dayDate,
         emotions: Array.isArray(dayData.emociones) ? dayData.emociones : [],
         tags: Array.isArray(dayData.tags) ? dayData.tags : [],
-        photos: Array.isArray(dayData.fotos) ? dayData.fotos : [],
+        photos: photos,
         comments: Array.isArray(dayData.comentarios) ? dayData.comentarios : []
       });
     }
@@ -588,12 +669,53 @@ class PDFGeneratorService {
               <div class="photos-section">
                 <h4>Fotos del día</h4>
                 <div class="photos-grid">
-                  ${day.photos.map(photo => `
+                  ${day.photos.map((photo, photoIdx) => {
+                    const raw = photo && (photo.url || photo);
+                    let url = null;
+                    if (raw) {
+                      if (typeof raw === 'string') {
+                        // Si es una ruta relativa, construir URL completa con PUBLIC_BASE_URL
+                        if (raw.startsWith('/')) {
+                          url = `${PUBLIC_BASE_URL}${raw}`;
+                        } else if (raw.startsWith('http://') || raw.startsWith('https://')) {
+                          // Ya es URL completa
+                          url = raw;
+                        } else {
+                          // Si no tiene prefijo, asumir que es relativa
+                          url = `${PUBLIC_BASE_URL}/${raw}`;
+                        }
+                      } else if (typeof raw === 'object' && raw.url) {
+                        // Si es objeto con url, aplicar la misma lógica
+                        if (raw.url.startsWith('/')) {
+                          url = `${PUBLIC_BASE_URL}${raw.url}`;
+                        } else if (raw.url.startsWith('http://') || raw.url.startsWith('https://')) {
+                          url = raw.url;
+                        } else {
+                          url = `${PUBLIC_BASE_URL}/${raw.url}`;
+                        }
+                      }
+                    }
+                    
+                    console.log(`🖼️ PDFGenerator: Foto ${photoIdx + 1} URL construida:`, url);
+                    
+                    return `
                     <div class="photo-item">
-                      <div class="photo-placeholder">Foto</div>
-                      <div class="photo-caption">${photo.caption || 'Momento especial'}</div>
-                    </div>
-                  `).join('')}
+                      ${url ? `
+                        <img 
+                          src="${url}" 
+                          alt="foto ${photoIdx + 1}" 
+                          style="max-width:100%; max-height:200px; object-fit:contain; border-radius:8px; margin-bottom:10px; display:block;" 
+                          loading="eager"
+                          crossorigin="anonymous"
+                          onerror="console.error('Error cargando imagen:', '${url}'); this.style.display='none';"
+                          onload="console.log('Imagen cargada:', '${url}');"
+                        />
+                      ` : `
+                        <div class="photo-placeholder">Foto sin URL</div>
+                      `}
+                      <div class="photo-caption">${photo.caption || ''}</div>
+                    </div>`;
+                  }).join('')}
                 </div>
               </div>
             ` : ''}
@@ -655,7 +777,7 @@ class PDFGeneratorService {
    */
   getPublicURL(filePath) {
     const fileName = path.basename(filePath);
-    return `http://localhost:3000/pdfs/${fileName}`;
+    return `${PUBLIC_BASE_URL}/pdfs/${fileName}`;
   }
 
   /**
@@ -682,6 +804,37 @@ class PDFGeneratorService {
       return { filePath: latest.full, url: this.getPublicURL(latest.full) };
     } catch (e) {
       return null;
+    }
+  }
+
+  /**
+   * Eliminar todos los PDFs de un usuario (opcionalmente por semana)
+   * @param {string} userId
+   * @param {number|null} weekNumber
+   * @returns {Promise<{deleted:number, files:string[]}>}
+   */
+  async purgeUserPDFs(userId, weekNumber = null) {
+    const fs = require('fs/promises');
+    try {
+      const files = await fs.readdir(this.outputDir);
+      const prefix = weekNumber
+        ? `diario-semanal-${userId}-semana-${weekNumber}-`
+        : `diario-semanal-${userId}-`;
+      const targets = files
+        .filter(name => name.startsWith(prefix) && name.endsWith('.pdf'))
+        .map(name => ({ name, full: path.join(this.outputDir, name) }));
+      let deleted = 0;
+      for (const f of targets) {
+        try {
+          await fs.unlink(f.full);
+          deleted++;
+        } catch (e) {
+          // continuar
+        }
+      }
+      return { deleted, files: targets.map(t => t.name) };
+    } catch (e) {
+      return { deleted: 0, files: [] };
     }
   }
 }

@@ -36,8 +36,9 @@ app.use(cors({
 // Compresión
 app.use(compression());
 
-// Servir archivos estáticos (PDFs)
+// Servir archivos estáticos (PDFs y Uploads)
 app.use('/pdfs', express.static('public/pdfs'));
+app.use('/uploads', express.static('public/uploads'));
 
 // Logging
 app.use(morgan('combined'));
@@ -128,6 +129,9 @@ app.use('/api/v1', faforeModule.getRouter());
 app.use('/api/v1', adminStatisticsModule.getRouter());
 app.use('/api/v1', userModule.getRouter());
 app.use('/api/v1', authModule.getRouter());
+
+// Ruta de subida de archivos (fotos)
+app.use('/api/v1', require('./src/routes/uploadRoutes'));
 
 // Rutas de red (para detección automática de IP)
 app.use('/api/v1', require('./src/routes/networkRoutes'));

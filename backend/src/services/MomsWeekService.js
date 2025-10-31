@@ -136,28 +136,94 @@ class MomsWeekService {
    */
   async generateWeeklyBook(userId, bookData = null) {
     try {
-      const currentDate = new Date();
-      const weekInfo = this.calculateWeekInfo(currentDate);
+      // Calcular semana basándose en las entradas si están disponibles, sino usar fecha actual
+      let weekInfo;
+      if (bookData && Array.isArray(bookData.entradas) && bookData.entradas.length > 0) {
+        // Encontrar la fecha más antigua de las entradas
+        const dates = bookData.entradas
+          .map(e => {
+            if (!e || !e.fecha) return null;
+            if (typeof e.fecha === 'string' && e.fecha.includes('-')) {
+              const [y, m, d] = e.fecha.split('T')[0].split('-').map(n => parseInt(n, 10));
+              return new Date(y, m - 1, d);
+            }
+            return new Date(e.fecha);
+          })
+          .filter(d => d && !isNaN(d.getTime()));
+        
+        if (dates.length > 0) {
+          const minDate = new Date(Math.min(...dates));
+          weekInfo = this.calculateWeekInfo(minDate);
+          console.log('📅 Calculando semana desde entradas:', minDate.toISOString().split('T')[0], '-> semana:', weekInfo.semana);
+        } else {
+          const currentDate = new Date();
+          weekInfo = this.calculateWeekInfo(currentDate);
+        }
+      } else {
+        const currentDate = new Date();
+        weekInfo = this.calculateWeekInfo(currentDate);
+      }
       
       // Si no se proporcionan datos del libro, obtenerlos del repositorio
       if (!bookData) {
         bookData = await this.repository.generateWeeklyBook(userId, weekInfo.fechaInicio, weekInfo.fechaFin);
       }
       
-      // Adaptar datos para el generador (espera 'days')
-      const days = Array.isArray(bookData.entradas) ? bookData.entradas.map(e => ({
-        day: e.fecha || '',
-        emotion: e.emocion || null,
-        emotionName: e.emocion || null,
-        photo: (Array.isArray(e.fotos) && e.fotos.length > 0) ? '📸' : null,
-        text: e.contenido || e.titulo || '' ,
-        highlights: Array.isArray(e.tags) ? e.tags : []
-      })) : [];
+      // Adaptar datos al formato esperado por PDFGeneratorService.generateDaysHTML
+      // generateDaysHTML busca por 'dia' (1-7) y espera arrays: emociones, tags, fotos, comentarios
+      const initWeek = Array.from({ length: 7 }).map((_, idx) => ({
+        dia: idx + 1,
+        emociones: [],
+        tags: [],
+        fotos: [],
+        comentarios: []
+      }));
+
+      if (Array.isArray(bookData.entradas)) {
+        for (const e of bookData.entradas) {
+          if (!e) continue;
+          // Interpretar YYYY-MM-DD como fecha local para evitar desfases (UTC)
+          let dateObj;
+          if (typeof e.fecha === 'string' && e.fecha.includes('-')) {
+            const [y, m, d] = e.fecha.split('T')[0].split('-').map(n => parseInt(n, 10));
+            dateObj = new Date(y, (m || 1) - 1, d || 1);
+          } else {
+            dateObj = new Date(e.fecha || Date.now());
+          }
+          const jsDay = dateObj.getDay(); // 0 (Domingo) - 6 (Sábado)
+          const dia = jsDay === 0 ? 7 : jsDay; // 1 (Lunes) - 7 (Domingo)
+          const slot = initWeek[dia - 1];
+
+          if (e.emocion) slot.emociones.push(e.emocion);
+          if (Array.isArray(e.tags)) slot.tags.push(...e.tags.filter(Boolean));
+          if (Array.isArray(e.fotos)) {
+            // Normalizar a objetos con caption/url si es posible
+            const normalized = e.fotos.map(f => {
+              if (!f) return null;
+              if (typeof f === 'string') {
+                const isHttp = f.startsWith('http://') || f.startsWith('https://') || f.startsWith('/');
+                return isHttp ? { url: f, caption: undefined } : { caption: f };
+              }
+              // Si ya viene como objeto, respetar propiedades conocidas
+              if (typeof f === 'object') {
+                return { url: f.url, caption: f.caption };
+              }
+              return null;
+            }).filter(Boolean);
+            slot.fotos.push(...normalized);
+          }
+          const texto = e.contenido || e.titulo;
+          if (texto) slot.comentarios.push(texto);
+        }
+      }
+
+      const days = initWeek;
 
       // Generar el PDF real con el formato que consume el generador
       const pdfPath = await this.pdfGenerator.generateWeeklyDiaryPDF({
         weekNumber: weekInfo.semana,
         dateRange: weekInfo.rango,
+        fechaInicio: weekInfo.fechaInicio, // Pasar fecha de inicio para calcular semana correcta
         childName: 'Sofia',
         momName: 'Mamá',
         days,
@@ -645,6 +711,43 @@ class MomsWeekService {
       };
     } catch (error) {
       throw new Error(`Error al obtener vista previa: ${error.message}`);
+    }
+  }
+
+  /**
+   * Purga de PDFs generados para un usuario (y opcionalmente semana)
+   * @param {string} userId
+   * @param {number|null} weekNumber
+   */
+  async purgePDFs(userId, weekNumber = null) {
+    const result = await this.pdfGenerator.purgeUserPDFs(userId, weekNumber);
+    return { success: true, data: result };
+  }
+
+  /**
+   * Purga registros de PDFs en la base de datos si existe la tabla pdf_generados
+   * @param {string} userId
+   * @param {number|null} weekNumber
+   */
+  async purgePDFRecords(userId, weekNumber = null) {
+    try {
+      const { query } = require('../../config/database');
+      // Verificar existencia de tabla
+      const check = await query("SHOW TABLES LIKE 'pdf_generados'");
+      if (!Array.isArray(check) || check.length === 0) {
+        return { success: true, data: { deleted: 0 } };
+      }
+      let sql = 'DELETE FROM pdf_generados WHERE usuario_id = ?';
+      const params = [userId];
+      if (weekNumber !== null && !Number.isNaN(weekNumber)) {
+        sql += ' AND semana_numero = ?';
+        params.push(weekNumber);
+      }
+      const res = await query(sql, params);
+      return { success: true, data: { affectedRows: res.affectedRows || 0 } };
+    } catch (e) {
+      // No romper si la tabla/cols no existen
+      return { success: true, data: { affectedRows: 0 } };
     }
   }
 }

@@ -12,12 +12,15 @@ import {
   Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Button from '../../../components/Button';
 import { Colors } from '../../../constants/colors';
 import { FontSizes, Spacing } from '../../../constants/dimensions';
 import { useDiary } from '../../../Hooks/useDiary';
+import { momsWeekService } from '../../../proxy/services/momsWeekService';
+import { buildPdfUrl } from '../../../utils/pdfUtils';
 
 export default function TodaysActivity() {
   const router = useRouter();
@@ -45,12 +48,13 @@ export default function TodaysActivity() {
     console.log('Navegando al perfil');
   };
 
-  // Cargar entradas al montar el componente
-  // TEMPORALMENTE DESHABILITADO PARA EVITAR BUCLE INFINITO
-  // useEffect(() => {
-  //   console.log('🔄 Cargando entradas del diario...');
-  //   fetchEntries();
-  // }, []);
+  // Cargar entradas al enfocar la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🔄 screen13: Cargando entradas del diario...');
+      fetchEntries();
+    }, [])
+  );
 
   const handleAddPhoto = async () => {
     try {
@@ -89,7 +93,7 @@ export default function TodaysActivity() {
   const pickImageFromGallery = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -137,7 +141,9 @@ export default function TodaysActivity() {
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    // Usar fecha local (no UTC) para evitar desfases
+    const todayLocal = new Date();
+    const today = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
     
     // Verificar si ya existe una entrada para hoy
     const existingEntry = entries.find(entry => {
@@ -152,8 +158,7 @@ export default function TodaysActivity() {
         [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Editar', onPress: () => {
-            // Aquí podrías navegar a una pantalla de edición
-            console.log('Editando entrada existente:', existingEntry.id);
+            router.replace('/Moms-week/ViewPreviuosDays/screen15');
           }}
         ]
       );
@@ -403,6 +408,33 @@ export default function TodaysActivity() {
               style={[styles.saveButton, loading && styles.saveButtonDisabled]}
               disabled={loading}
             />
+
+          {/* Navigation Buttons */}
+          <View style={{ marginTop: Spacing.md, gap: Spacing.sm }}>
+            <Button
+              title="👀 Vista previa (editar días)"
+              onPress={() => router.replace('/Moms-week/ViewPreviuosDays/screen15')}
+              variant="secondary"
+            />
+            <Button
+              title="📄 Ver mi último PDF"
+              onPress={async () => {
+                try {
+                  const resp = await momsWeekService.getLatestPdf('test_review');
+                  const data = resp?.data || resp;
+                  const url = buildPdfUrl(data?.data?.pdfUrl || data?.pdfUrl);
+                  if (url) {
+                    router.push(`/Moms-week/ViewPdf/screen14?pdf=${encodeURIComponent(url)}`);
+                  } else {
+                    Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
+                  }
+                } catch (e) {
+                  Alert.alert('Sin PDF', 'Aún no hay PDFs generados.');
+                }
+              }}
+              variant="secondary"
+            />
+          </View>
           </View>
         </ScrollView>
       </LinearGradient>

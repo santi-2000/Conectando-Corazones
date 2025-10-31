@@ -122,6 +122,14 @@ router.get('/:userId/pdf-preview', optionalAuth, validateUserId, async (req, res
   await controller.getPDFPreview(req, res);
 });
 
+/**
+ * DELETE /moms-week/:userId/pdfs
+ * Eliminar PDFs generados del usuario (opcional ?week=NN)
+ */
+router.delete('/:userId/pdfs', optionalAuth, validateUserId, async (req, res) => {
+  await controller.purgePDFs(req, res);
+});
+
 // ===== PANTALLA 15: Días Anteriores =====
 /**
  * GET /moms-week/:userId/previous-days

@@ -47,7 +47,7 @@ export const calendarService = {
   async updateEvent(userId, eventId, eventData) {
     try {
       console.log('🔍 calendarService.updateEvent: Iniciando petición...');
-      const response = await apiClient.put(`/calendar/${userId}/events/${eventId}`, eventData);
+      const response = await apiClient.put(`/calendar/${userId}/event/${eventId}`, eventData);
       console.log('✅ calendarService.updateEvent: Respuesta recibida:', response);
       return response;
     } catch (error) {
@@ -65,7 +65,7 @@ export const calendarService = {
   async deleteEvent(userId, eventId) {
     try {
       console.log('🔍 calendarService.deleteEvent: Iniciando petición...');
-      const response = await apiClient.delete(`/calendar/${userId}/events/${eventId}`);
+      const response = await apiClient.delete(`/calendar/${userId}/event/${eventId}`);
       console.log('✅ calendarService.deleteEvent: Respuesta recibida:', response);
       return response;
     } catch (error) {
@@ -83,7 +83,7 @@ export const calendarService = {
   async getEventById(userId, eventId) {
     try {
       console.log('🔍 calendarService.getEventById: Iniciando petición...');
-      const response = await apiClient.get(`/calendar/${userId}/events/${eventId}`);
+      const response = await apiClient.get(`/calendar/${userId}/event/${eventId}`);
       console.log('✅ calendarService.getEventById: Respuesta recibida:', response);
       return response;
     } catch (error) {
@@ -101,7 +101,7 @@ export const calendarService = {
   async getEventsByDate(userId, date) {
     try {
       console.log('🔍 calendarService.getEventsByDate: Iniciando petición...');
-      const response = await apiClient.get(`/calendar/${userId}/events/date/${date}`);
+      const response = await apiClient.get(`/calendar/${userId}/date/${date}`);
       console.log('✅ calendarService.getEventsByDate: Respuesta recibida:', response);
       return response;
     } catch (error) {

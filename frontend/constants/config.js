@@ -1,7 +1,27 @@
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+// Resolver dinámicamente la URL base del backend según el entorno (web/simulador/dispositivo)
+const resolveApiBaseUrl = () => {
+  // Web desde el mismo equipo
+  if (Platform.OS === 'web') {
+    return 'http://localhost:3000/api/v1';
+  }
+  // Expo: extraer IP del host (dispositivo físico/simulador)
+  const expoConfig = Constants.expoConfig || Constants.manifest;
+  const hostUri = expoConfig?.hostUri || expoConfig?.debuggerHost; // p.ej. 192.168.x.x:19000
+  if (hostUri) {
+    const host = hostUri.split(':')[0];
+    return `http://${host}:3000/api/v1`;
+  }
+  // Fallback manual (ajustar si tu IP LAN es distinta)
+  return 'http://192.168.0.22:3000/api/v1';
+};
+
 // Configuración de la aplicación
 export const CONFIG = {
-  // URL base del backend - Se detecta automáticamente
-  API_BASE_URL: 'http://192.168.0.22:3000/api/v1',
+  // URL base del backend - detección automática compatible con dispositivo
+  API_BASE_URL: resolveApiBaseUrl(),
   
   // Configuración de la aplicación
   APP_NAME: 'Conectando Corazones',

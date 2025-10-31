@@ -7,23 +7,28 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '../../../components/Button';
 import { Colors } from '../../../constants/colors';
 import { FontSizes, Spacing } from '../../../constants/dimensions';
+import { useCalendar } from '../../../Hooks/useCalendar';
 
 export default function AgregarFecha() {
   const router = useRouter();
+  const { createEvent, loading } = useCalendar('test_review');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedColor, setSelectedColor] = useState('#4A90E2');
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [nivelImportancia, setNivelImportancia] = useState('Alto');
+  const [tipoEvento, setTipoEvento] = useState('diferente');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showImportancePicker, setShowImportancePicker] = useState(false);
+  const [showTypePicker, setShowTypePicker] = useState(false);
 
   const handleBack = () => {
     router.back();
@@ -33,16 +38,43 @@ export default function AgregarFecha() {
     router.push('/Usuario/screen17');
   };
 
-  const handleSave = () => {
-    console.log('Guardando fecha:', {
-      fecha: selectedDate,
-      color: selectedColor,
-      titulo,
-      descripcion,
-      nivelImportancia
-    });
-    // Aquí iría la lógica para guardar la fecha
-    router.back();
+  const handleSave = async () => {
+    if (!titulo.trim()) {
+      Alert.alert('Error', 'Por favor ingresa un título para el evento');
+      return;
+    }
+
+    try {
+      // Formatear fecha a ISO (YYYY-MM-DD)
+      const fechaISO = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+      
+      const eventData = {
+        titulo: titulo.trim(),
+        descripcion: descripcion.trim() || null,
+        fecha_evento: fechaISO,
+        color: selectedColor,
+        tipo_evento: tipoEvento,
+        nivel_importancia: nivelImportancia,
+        recordatorio_activo: false,
+        ubicacion: null,
+        notas_adicionales: null
+      };
+
+      console.log('📅 Creando evento:', eventData);
+      
+      await createEvent(eventData);
+      
+      Alert.alert(
+        '✅ Éxito', 
+        'Evento creado exitosamente',
+        [
+          { text: 'OK', onPress: () => router.back() }
+        ]
+      );
+    } catch (error) {
+      console.error('❌ Error al crear evento:', error);
+      Alert.alert('❌ Error', error.message || 'No se pudo crear el evento. Verifica tu conexión.');
+    }
   };
 
   const handleDatePress = (day) => {
@@ -207,6 +239,37 @@ export default function AgregarFecha() {
               </View>
             </View>
 
+            {/* Tipo de Evento Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Tipo de Evento</Text>
+              <TouchableOpacity 
+                style={styles.dropdownContainer}
+                onPress={() => setShowTypePicker(!showTypePicker)}
+              >
+                <Text style={styles.dropdownText}>
+                  {eventTypes.find(t => t.value === tipoEvento)?.label || 'Seleccionar tipo'}
+                </Text>
+                <Text style={styles.dropdownIcon}>⌄</Text>
+              </TouchableOpacity>
+              
+              {showTypePicker && (
+                <View style={styles.dropdownList}>
+                  {eventTypes.map((type, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setTipoEvento(type.value);
+                        setShowTypePicker(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{type.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
             {/* Color Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Color</Text>
@@ -215,7 +278,7 @@ export default function AgregarFecha() {
                 onPress={() => setShowColorPicker(!showColorPicker)}
               >
                 <Text style={styles.dropdownText}>
-                  {selectedColor || 'Seleccionar color'}
+                  {colors.find(c => c.value === selectedColor)?.name || 'Seleccionar color'}
                 </Text>
                 <Text style={styles.dropdownIcon}>⌄</Text>
               </TouchableOpacity>
@@ -225,9 +288,13 @@ export default function AgregarFecha() {
                   {colors.map((color, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={[styles.colorOption, { backgroundColor: color.value }]}
+                      style={[
+                        styles.colorOption, 
+                        { backgroundColor: color.value },
+                        selectedColor === color.value && styles.colorOptionSelected
+                      ]}
                       onPress={() => {
-                        setSelectedColor(color.name);
+                        setSelectedColor(color.value);
                         setShowColorPicker(false);
                       }}
                     />

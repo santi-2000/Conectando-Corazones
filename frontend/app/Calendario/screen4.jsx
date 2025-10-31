@@ -84,9 +84,43 @@ export default function Calendario() {
 
   // Convertir eventos del backend a formato del calendario
   const eventsMap = {};
-  if (events && events.length > 0) {
+  if (events && Array.isArray(events) && events.length > 0) {
     events.forEach(event => {
-      const dateKey = event.fecha_inicio ? event.fecha_inicio.split('T')[0] : '';
+      // El backend puede devolver eventos directamente o dentro de data.eventos
+      const eventData = event.eventos ? event.eventos : (Array.isArray(event) ? event : [event]);
+      const eventsArray = Array.isArray(eventData) ? eventData : [eventData];
+      
+      eventsArray.forEach(e => {
+        // Intentar diferentes campos de fecha
+        let dateKey = '';
+        if (e.fecha_evento) {
+          dateKey = e.fecha_evento.split('T')[0];
+        } else if (e.fecha_inicio) {
+          dateKey = e.fecha_inicio.split('T')[0];
+        } else if (e.fecha) {
+          dateKey = e.fecha.split('T')[0];
+        }
+        
+        if (dateKey) {
+          eventsMap[dateKey] = {
+            type: e.tipo_evento || 'diferente',
+            color: e.color || '#4A90E2',
+            title: e.titulo || 'Evento',
+            id: e.id
+          };
+        }
+      });
+    });
+  } else if (events && events.eventos && Array.isArray(events.eventos)) {
+    // Si events es un objeto con propiedad eventos
+    events.eventos.forEach(event => {
+      let dateKey = '';
+      if (event.fecha_evento) {
+        dateKey = event.fecha_evento.split('T')[0];
+      } else if (event.fecha_inicio) {
+        dateKey = event.fecha_inicio.split('T')[0];
+      }
+      
       if (dateKey) {
         eventsMap[dateKey] = {
           type: event.tipo_evento || 'diferente',
