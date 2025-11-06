@@ -28,9 +28,11 @@ const getAllowedOrigins = () => {
     // Agregar dominios comunes de GitHub Pages
     const defaultOrigins = [
       'https://*.github.io',
-      'https://*.github.com'
+      'https://*.github.com',
+      'https://santi-2000.github.io' // URL específica del usuario
     ];
     
+    console.log('🌐 CORS Origins permitidos:', [...corsOrigins, ...defaultOrigins]);
     return [...corsOrigins, ...defaultOrigins];
   }
   

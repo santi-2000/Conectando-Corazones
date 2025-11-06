@@ -7,24 +7,27 @@ const resolveApiBaseUrl = () => {
   const isProduction = typeof window !== 'undefined' && 
     (window.location.hostname.includes('github.io') || 
      window.location.hostname.includes('github.com') ||
+     window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ||
      process.env.NODE_ENV === 'production');
   
   // Si hay una variable de entorno para la URL del backend, usarla
   if (typeof window !== 'undefined' && window.ENV?.API_BASE_URL) {
+    console.log('🌐 Usando API_BASE_URL de window.ENV:', window.ENV.API_BASE_URL);
     return window.ENV.API_BASE_URL;
   }
   
   // En producción, usar la URL de tu backend desplegado
-  // IMPORTANTE: Cambia esta URL por la de tu backend en producción
   if (isProduction) {
-    // Ejemplo: 'https://tu-backend.herokuapp.com/api/v1'
-    // O: 'https://api.tudominio.com/api/v1'
-    return process.env.REACT_APP_API_URL || 'https://conectando-corazones-8ias.onrender.com/api/v1';
+    const prodUrl = process.env.EXPO_PUBLIC_API_URL || process.env.REACT_APP_API_URL || 'https://conectando-corazones-8ias.onrender.com/api/v1';
+    console.log('🌐 Producción detectada. Backend URL:', prodUrl);
+    return prodUrl;
   }
   
   // Desarrollo local
   if (Platform.OS === 'web') {
-    return 'http://localhost:3000/api/v1';
+    const devUrl = 'http://localhost:3000/api/v1';
+    console.log('🌐 Desarrollo web. Backend URL:', devUrl);
+    return devUrl;
   }
   
   // Expo: extraer IP del host (dispositivo físico/simulador)
@@ -32,10 +35,14 @@ const resolveApiBaseUrl = () => {
   const hostUri = expoConfig?.hostUri || expoConfig?.debuggerHost; // p.ej. 192.168.x.x:19000
   if (hostUri) {
     const host = hostUri.split(':')[0];
-    return `http://${host}:3000/api/v1`;
+    const expoUrl = `http://${host}:3000/api/v1`;
+    console.log('🌐 Expo. Backend URL:', expoUrl);
+    return expoUrl;
   }
   // Fallback manual (ajustar si tu IP LAN es distinta)
-  return 'http://192.168.0.22:3000/api/v1';
+  const fallbackUrl = 'http://192.168.0.22:3000/api/v1';
+  console.log('🌐 Fallback. Backend URL:', fallbackUrl);
+  return fallbackUrl;
 };
 
 // Configuración de la aplicación

@@ -118,11 +118,18 @@ class ApiClient {
     }
 
     try {
+      console.log(`🌐 API ${method} ${url}`);
+      console.log('📤 Request config:', { method, headers: config.headers, body: config.body ? 'present' : 'none' });
+      
       const response = await fetch(url, config);
+      
+      console.log(`📥 Response status: ${response.status} ${response.statusText}`);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
       
       // Verificar si la respuesta es exitosa
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error('❌ API Error:', { status: response.status, data: errorData });
         throw {
           response: {
             status: response.status,
@@ -133,13 +140,12 @@ class ApiClient {
 
       const result = await response.json();
       
-      // Log para debugging en desarrollo
-      if (CONFIG.DEBUG) {
-        console.log(`API ${method} ${endpoint}:`, result);
-      }
+      // Log para debugging
+      console.log(`✅ API ${method} ${endpoint} success:`, result);
 
       return result;
     } catch (error) {
+      console.error(`❌ API ${method} ${endpoint} error:`, error);
       const handled = this.handleError(error);
       if (handled !== undefined) {
         return handled;

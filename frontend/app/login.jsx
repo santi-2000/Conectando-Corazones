@@ -7,7 +7,9 @@ import {
   StatusBar,
   SafeAreaView,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,16 +18,44 @@ import Input from '../components/Input';
 import Logo from '../components/Logo';
 import { Colors } from '../constants/colors';
 import { FontSizes, Spacing, ScreenDimensions } from '../constants/dimensions';
+import { useAuth } from '../Hooks/useAuth';
+import { CONFIG } from '../constants/config';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login, isLoading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleLogin = () => {
-    // Aquí iría la lógica de autenticación
-    if (username && password) {
-      router.push('/home');
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Por favor ingresa usuario y contraseña');
+      return;
+    }
+
+    try {
+      setIsLoggingIn(true);
+      console.log('🔐 Login: Intentando iniciar sesión...');
+      console.log('🌐 Backend URL:', CONFIG.API_BASE_URL);
+      console.log('👤 Usuario:', username);
+      
+      const result = await login(username, password);
+      
+      if (result.success) {
+        console.log('✅ Login exitoso:', result.user);
+        Alert.alert('Éxito', 'Inicio de sesión exitoso', [
+          { text: 'OK', onPress: () => router.push('/home') }
+        ]);
+      }
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      Alert.alert(
+        'Error de inicio de sesión',
+        error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.'
+      );
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -84,10 +114,20 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <Button
-              title="Sign in"
+              title={isLoggingIn ? "Iniciando sesión..." : "Sign in"}
               onPress={handleLogin}
               variant="primary"
+              disabled={isLoggingIn}
             />
+            
+            {/* Debug info en desarrollo */}
+            {__DEV__ && (
+              <View style={styles.debugContainer}>
+                <Text style={styles.debugText}>
+                  Backend: {CONFIG.API_BASE_URL}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Footer */}
@@ -175,5 +215,16 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  debugContainer: {
+    marginTop: Spacing.md,
+    padding: Spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 8,
+  },
+  debugText: {
+    fontSize: FontSizes.xs,
+    color: Colors.text.secondary,
+    textAlign: 'center',
   },
 });
