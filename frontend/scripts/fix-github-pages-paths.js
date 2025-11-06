@@ -14,60 +14,76 @@ function fixPathsInFile(filePath) {
     const originalContent = content;
     const isHtml = filePath.endsWith('.html');
 
-    // Para archivos HTML, agregar tag <base> si no existe
-    if (isHtml && content.includes('<head>')) {
-      // Verificar si ya tiene un tag <base>
-      if (!content.includes('<base')) {
-        // Agregar tag <base> justo después de <head>
-        content = content.replace(
-          /<head>/i,
-          `<head>\n  <base href="${BASE_PATH}/">`
-        );
-        console.log(`✅ Agregado tag <base> en: ${filePath}`);
+    // Para archivos HTML, NO usar tag <base> porque causa duplicación
+    // En su lugar, reemplazar todas las rutas absolutas directamente
+    // Si ya tiene tag <base>, quitarlo
+    if (isHtml && content.includes('<base')) {
+      content = content.replace(/<base[^>]*>/i, '');
+      console.log(`✅ Removido tag <base> de: ${filePath}`);
+    }
+
+    // Estrategia: Reemplazar solo rutas que NO tienen ya el prefijo
+    // Primero, reemplazar todas las ocurrencias de /_expo/ y /static/ que NO están dentro de una ruta con prefijo
+    
+    // Reemplazar /_expo/ (solo si no está precedido por el prefijo en los últimos 30 caracteres)
+    let lastIndex = 0;
+    while (true) {
+      const index = content.indexOf('/_expo/', lastIndex);
+      if (index === -1) break;
+      const before = content.substring(Math.max(0, index - 50), index);
+      if (!before.includes('Conectando-Corazones/')) {
+        content = content.substring(0, index) + `${BASE_PATH}/_expo/` + content.substring(index + 7);
+        lastIndex = index + BASE_PATH.length + 7;
       } else {
-        // Si ya existe, actualizarlo
-        content = content.replace(
-          /<base[^>]*>/i,
-          `<base href="${BASE_PATH}/">`
-        );
+        lastIndex = index + 7;
+      }
+    }
+    
+    // Reemplazar /static/ (solo si no está precedido por el prefijo)
+    lastIndex = 0;
+    while (true) {
+      const index = content.indexOf('/static/', lastIndex);
+      if (index === -1) break;
+      const before = content.substring(Math.max(0, index - 50), index);
+      if (!before.includes('Conectando-Corazones/')) {
+        content = content.substring(0, index) + `${BASE_PATH}/static/` + content.substring(index + 8);
+        lastIndex = index + BASE_PATH.length + 8;
+      } else {
+        lastIndex = index + 8;
       }
     }
 
-    // Reemplazar rutas absolutas que empiezan con /_expo (en cualquier contexto)
-    content = content.replace(/\/_expo\//g, `${BASE_PATH}/_expo/`);
-    
-    // Reemplazar rutas absolutas que empiezan con /static
-    content = content.replace(/\/static\//g, `${BASE_PATH}/static/`);
-
-    // Reemplazar CUALQUIER ruta absoluta que empiece con / (excepto URLs completas)
+    // Reemplazar rutas absolutas en src/href (solo si NO tienen ya el prefijo)
     content = content.replace(/src=["']\/([^"']+)["']/g, (match, path) => {
-      // No modificar si es una URL completa
-      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
+      // No modificar si es una URL completa o ya tiene el prefijo
+      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') || 
+          path.includes('Conectando-Corazones/')) {
         return match;
       }
       return `src="${BASE_PATH}/${path}"`;
     });
     content = content.replace(/href=["']\/([^"']+)["']/g, (match, path) => {
-      // No modificar si es una URL completa
-      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
+      // No modificar si es una URL completa o ya tiene el prefijo
+      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') ||
+          path.includes('Conectando-Corazones/')) {
         return match;
       }
       return `href="${BASE_PATH}/${path}"`;
     });
     
-    // Reemplazar en JSON (para manifest, etc) - con comillas simples y dobles
-    content = content.replace(/"\/_expo\//g, `"${BASE_PATH}/_expo/`);
-    content = content.replace(/"\/static\//g, `"${BASE_PATH}/static/`);
-    content = content.replace(/'\/_expo\//g, `'${BASE_PATH}/_expo/`);
-    content = content.replace(/'\/static\//g, `'${BASE_PATH}/static/`);
+    // Reemplazar en JSON (para manifest, etc) - solo si NO tienen ya el prefijo
+    content = content.replace(/"\/(?!Conectando-Corazones\/)_expo\//g, `"${BASE_PATH}/_expo/`);
+    content = content.replace(/"\/(?!Conectando-Corazones\/)static\//g, `"${BASE_PATH}/static/`);
+    content = content.replace(/'\/(?!Conectando-Corazones\/)_expo\//g, `'${BASE_PATH}/_expo/`);
+    content = content.replace(/'\/(?!Conectando-Corazones\/)static\//g, `'${BASE_PATH}/static/`);
     
-    // Reemplazar en strings de JavaScript (sin comillas, como en código)
-    content = content.replace(/([^"'])\/_expo\//g, `$1${BASE_PATH}/_expo/`);
-    content = content.replace(/([^"'])\/static\//g, `$1${BASE_PATH}/static/`);
+    // Reemplazar en strings de JavaScript
+    content = content.replace(/([^"'])\/(?!Conectando-Corazones\/)_expo\//g, `$1${BASE_PATH}/_expo/`);
+    content = content.replace(/([^"'])\/(?!Conectando-Corazones\/)static\//g, `$1${BASE_PATH}/static/`);
     
     // Reemplazar rutas que empiezan con / al inicio de string (para imports, requires, etc)
-    content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/_expo\//g, `$1("${BASE_PATH}/_expo/`);
-    content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/static\//g, `$1("${BASE_PATH}/static/`);
+    content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/(?!Conectando-Corazones\/)_expo\//g, `$1("${BASE_PATH}/_expo/`);
+    content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/(?!Conectando-Corazones\/)static\//g, `$1("${BASE_PATH}/static/`);
 
     // Si el contenido cambió, guardar
     if (content !== originalContent) {
