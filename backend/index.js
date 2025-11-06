@@ -213,12 +213,51 @@ app.use((err, req, res, next) => {
 // INICIAR SERVIDOR
 // =============================================
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
-  console.log(`📱 API disponible en: http://localhost:${PORT}`);
-  console.log(`📱 API disponible en: http://192.168.1.190:${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 Documentación: http://localhost:${PORT}/api/docs`);
+// Importar testConnection para verificar la BD al iniciar
+const { testConnection } = require('./config/database');
+
+// Función para verificar conexión a la base de datos
+async function verifyDatabaseConnection() {
+  console.log('\n🔍 Verificando conexión a la base de datos...');
+  console.log(`📊 Configuración:`);
+  console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
+  console.log(`   Port: ${process.env.DB_PORT || 3306}`);
+  console.log(`   Database: ${process.env.DB_NAME || 'conectando_corazones'}`);
+  console.log(`   User: ${process.env.DB_USER || 'root'}`);
+  console.log(`   TiDB: ${process.env.DB_HOST && process.env.DB_HOST.includes('tidbcloud.com') ? 'Sí' : 'No'}`);
+  
+  try {
+    const isConnected = await testConnection();
+    if (isConnected) {
+      console.log('✅ Conexión a la base de datos: EXITOSA\n');
+      
+      // Probar una consulta simple
+      const { query } = require('./config/database');
+      const result = await query('SELECT DATABASE() as db, VERSION() as version');
+      if (result && result.length > 0) {
+        console.log(`📊 Base de datos activa: ${result[0].db}`);
+        console.log(`📊 Versión: ${result[0].version}\n`);
+      }
+    } else {
+      console.error('❌ Conexión a la base de datos: FALLIDA\n');
+      console.error('⚠️  El servidor se iniciará pero puede haber problemas con las consultas a la BD');
+    }
+  } catch (error) {
+    console.error('❌ Error al verificar conexión a la base de datos:', error.message);
+    console.error('⚠️  El servidor se iniciará pero puede haber problemas con las consultas a la BD\n');
+  }
+}
+
+// Verificar conexión antes de iniciar el servidor
+verifyDatabaseConnection().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor iniciado en puerto ${PORT}`);
+    console.log(`📱 API disponible en: http://localhost:${PORT}`);
+    console.log(`📱 API disponible en: http://192.168.1.190:${PORT}`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔍 Diagnóstico: http://localhost:${PORT}/api/v1/diagnostic/system`);
+    console.log(`📚 Documentación: http://localhost:${PORT}/api/docs`);
+  });
 });
 
 module.exports = app;

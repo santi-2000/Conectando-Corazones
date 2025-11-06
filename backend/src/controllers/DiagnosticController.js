@@ -13,25 +13,34 @@ async function getDatabaseInfo() {
     const dbName = await query('SELECT DATABASE() as database_name');
     const dbUser = await query('SELECT USER() as user');
     
-    // Contar registros en tablas principales
-    const tableCounts = await Promise.all([
-      query('SELECT COUNT(*) as count FROM educational_books'),
-      query('SELECT COUNT(*) as count FROM support_directories'),
-      query('SELECT COUNT(*) as count FROM users'),
-      query('SELECT COUNT(*) as count FROM moms_week_entries')
-    ]);
+    // Contar registros en tablas principales (con manejo de errores si no existen)
+    const tableCounts = {};
+    const tablesToCheck = [
+      'educational_books',
+      'support_directories', 
+      'users',
+      'usuarios',
+      'moms_week_entries',
+      'diary_entries',
+      'calendar_events'
+    ];
+    
+    for (const tableName of tablesToCheck) {
+      try {
+        const result = await query(`SELECT COUNT(*) as count FROM ${tableName}`);
+        tableCounts[tableName] = result[0]?.count || 0;
+      } catch (error) {
+        // Si la tabla no existe, simplemente marcarla como 0
+        tableCounts[tableName] = 'No existe';
+      }
+    }
 
     return {
       connected: true,
       version: dbVersion[0]?.version,
       database: dbName[0]?.database_name,
       user: dbUser[0]?.user,
-      tables: {
-        educational_books: tableCounts[0][0]?.count || 0,
-        support_directories: tableCounts[1][0]?.count || 0,
-        users: tableCounts[2][0]?.count || 0,
-        moms_week_entries: tableCounts[3][0]?.count || 0
-      }
+      tables: tableCounts
     };
   } catch (error) {
     return {
