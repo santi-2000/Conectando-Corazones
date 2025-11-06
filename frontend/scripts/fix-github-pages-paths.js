@@ -23,25 +23,32 @@ function fixPathsInFile(filePath) {
     }
 
     // PRIMERO: Limpiar cualquier duplicación existente
-    // Buscar patrones como /Conectando-Corazones/Conectando-Corazones/ o /Conectando-Corazones/_expo/Conectando-Corazones/
-    const duplicatePatterns = [
-      // Duplicación completa: /Conectando-Corazones/Conectando-Corazones/
-      new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}`, 'g'),
-      // Duplicación en rutas: /Conectando-Corazones/_expo/Conectando-Corazones/
-      new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
-      // Duplicación en rutas: /Conectando-Corazones/static/Conectando-Corazones/
-      new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
-    ];
-    
+    // Buscar y reemplazar duplicaciones de manera más agresiva
     let hasDuplicates = false;
-    duplicatePatterns.forEach(pattern => {
-      if (pattern.test(content)) {
-        hasDuplicates = true;
-        console.warn(`⚠️  ${filePath} tiene rutas duplicadas, limpiando...`);
-        // Reemplazar duplicaciones: quitar el segundo prefijo
-        content = content.replace(pattern, `${BASE_PATH}/`);
-      }
-    });
+    
+    // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
+    const pattern1 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+    if (pattern1.test(content)) {
+      hasDuplicates = true;
+      console.warn(`⚠️  ${filePath} tiene duplicación en _expo, limpiando...`);
+      content = content.replace(pattern1, `${BASE_PATH}/_expo/`);
+    }
+    
+    // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
+    const pattern2 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+    if (pattern2.test(content)) {
+      hasDuplicates = true;
+      console.warn(`⚠️  ${filePath} tiene duplicación en static, limpiando...`);
+      content = content.replace(pattern2, `${BASE_PATH}/static/`);
+    }
+    
+    // Patrón 3: /Conectando-Corazones/Conectando-Corazones/ -> /Conectando-Corazones/
+    const pattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}/`, 'g');
+    if (pattern3.test(content)) {
+      hasDuplicates = true;
+      console.warn(`⚠️  ${filePath} tiene duplicación completa, limpiando...`);
+      content = content.replace(pattern3, `${BASE_PATH}/`);
+    }
     
     // Si había duplicaciones, guardar y continuar para verificar otras rutas
     if (hasDuplicates) {
