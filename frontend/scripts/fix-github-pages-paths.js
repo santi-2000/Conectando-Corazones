@@ -23,45 +23,47 @@ function fixPathsInFile(filePath) {
     }
 
     // PRIMERO: Limpiar cualquier duplicación existente de manera más agresiva
-    // Usar replace directo en lugar de test primero para asegurar que se reemplace
+    // Usar replace directo y múltiples pasadas para asegurar que se reemplace todo
     let hasDuplicates = false;
     const originalBeforeClean = content;
+    let previousContent = '';
+    let cleanIterations = 0;
     
-    // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
-    const pattern1 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-    const before1 = content;
-    content = content.replace(pattern1, `${BASE_PATH}/_expo/`);
-    if (content !== before1) {
-      hasDuplicates = true;
-      console.warn(`⚠️  ${filePath} tiene duplicación en _expo, limpiando...`);
+    // Hacer múltiples pasadas hasta que no haya más cambios
+    while (content !== previousContent && cleanIterations < 10) {
+      previousContent = content;
+      cleanIterations++;
+      
+      // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
+      const pattern1 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      const before1 = content;
+      content = content.replace(pattern1, `${BASE_PATH}/_expo/`);
+      if (content !== before1) {
+        hasDuplicates = true;
+        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo, limpiando...`);
+      }
+      
+      // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
+      const pattern2 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      const before2 = content;
+      content = content.replace(pattern2, `${BASE_PATH}/static/`);
+      if (content !== before2) {
+        hasDuplicates = true;
+        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en static, limpiando...`);
+      }
+      
+      // Patrón 3: /Conectando-Corazones/Conectando-Corazones/ -> /Conectando-Corazones/
+      const pattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      const before3 = content;
+      content = content.replace(pattern3, `${BASE_PATH}/`);
+      if (content !== before3) {
+        hasDuplicates = true;
+        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación completa, limpiando...`);
+      }
     }
     
-    // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
-    const pattern2 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-    const before2 = content;
-    content = content.replace(pattern2, `${BASE_PATH}/static/`);
-    if (content !== before2) {
-      hasDuplicates = true;
-      console.warn(`⚠️  ${filePath} tiene duplicación en static, limpiando...`);
-    }
-    
-    // Patrón 3: /Conectando-Corazones/Conectando-Corazones/ -> /Conectando-Corazones/
-    const pattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}/`, 'g');
-    const before3 = content;
-    content = content.replace(pattern3, `${BASE_PATH}/`);
-    if (content !== before3) {
-      hasDuplicates = true;
-      console.warn(`⚠️  ${filePath} tiene duplicación completa, limpiando...`);
-    }
-    
-    // Patrón 4: Buscar cualquier ocurrencia de BASE_PATH duplicado en cualquier contexto
-    // Esto captura casos como: src="/Conectando-Corazones/_expo/Conectando-Corazones/static/..."
-    const pattern4 = new RegExp(`(${BASE_PATH.replace('/', '\\/')}/[^"']*?)${BASE_PATH.replace('/', '\\/')}/`, 'g');
-    const before4 = content;
-    content = content.replace(pattern4, '$1');
-    if (content !== before4) {
-      hasDuplicates = true;
-      console.warn(`⚠️  ${filePath} tiene duplicación en contexto, limpiando...`);
+    if (cleanIterations > 1) {
+      console.log(`🔧 ${filePath}: Limpieza de duplicaciones completada en ${cleanIterations} iteraciones`);
     }
     
     // Si había duplicaciones, guardar y continuar para verificar otras rutas
