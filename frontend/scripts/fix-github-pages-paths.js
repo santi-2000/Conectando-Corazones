@@ -106,11 +106,29 @@ function fixPathsInFile(filePath) {
     // IMPORTANTE: Verificar que la ruta completa NO tenga el prefijo antes de agregarlo
     // PRIMERO: Limpiar duplicaciones específicas en src/href antes de procesar
     // Patrón: src="/Conectando-Corazones/_expo/Conectando-Corazones/..." -> src="/Conectando-Corazones/_expo/..."
-    const duplicatePattern1 = new RegExp(`(src=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-    content = content.replace(duplicatePattern1, `$1${BASE_PATH}/_expo/`);
+    // Hacer múltiples pasadas para asegurar que se limpie todo
+    let previousDupContent = '';
+    let dupIterations = 0;
+    while (content !== previousDupContent && dupIterations < 5) {
+      previousDupContent = content;
+      dupIterations++;
+      
+      // Limpiar en src
+      const duplicatePattern1 = new RegExp(`(src=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      content = content.replace(duplicatePattern1, `$1${BASE_PATH}/_expo/`);
+      
+      // Limpiar en href
+      const duplicatePattern2 = new RegExp(`(href=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      content = content.replace(duplicatePattern2, `$1${BASE_PATH}/_expo/`);
+      
+      // También limpiar sin las comillas (por si acaso)
+      const duplicatePattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      content = content.replace(duplicatePattern3, `${BASE_PATH}/_expo/`);
+    }
     
-    const duplicatePattern2 = new RegExp(`(href=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-    content = content.replace(duplicatePattern2, `$1${BASE_PATH}/_expo/`);
+    if (dupIterations > 1) {
+      console.log(`🔧 ${filePath}: Limpieza de duplicaciones en src/href completada en ${dupIterations} iteraciones`);
+    }
     
     // Ahora procesar rutas normales
     content = content.replace(/src=["']\/(_expo\/[^"']+)["']/g, (match, path) => {
