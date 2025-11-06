@@ -118,9 +118,32 @@ function fixPathsInFile(filePath) {
     content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/(?!Conectando-Corazones\/)_expo\//g, `$1("${BASE_PATH}/_expo/`);
     content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/(?!Conectando-Corazones\/)static\//g, `$1("${BASE_PATH}/static/`);
     
-    // Limpiar cualquier duplicación que pueda haber quedado
-    const duplicateRegex = new RegExp(`(${BASE_PATH.replace('/', '\\/')})+`, 'g');
-    content = content.replace(duplicateRegex, BASE_PATH);
+    // Limpiar cualquier duplicación que pueda haber quedado (múltiples pasadas)
+    // Patrón más específico: buscar /Conectando-Corazones/_expo/Conectando-Corazones/ y reemplazar
+    let previousContent = '';
+    let iterations = 0;
+    while (content !== previousContent && iterations < 5) {
+      previousContent = content;
+      iterations++;
+      
+      // Limpiar duplicaciones específicas
+      content = content.replace(
+        new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
+        `${BASE_PATH}/_expo/`
+      );
+      content = content.replace(
+        new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
+        `${BASE_PATH}/static/`
+      );
+      content = content.replace(
+        new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}/`, 'g'),
+        `${BASE_PATH}/`
+      );
+    }
+    
+    if (iterations > 1) {
+      console.log(`🔧 ${filePath}: Limpiadas duplicaciones en ${iterations} iteraciones`);
+    }
 
     // Si el contenido cambió, guardar
     if (content !== originalContent) {
