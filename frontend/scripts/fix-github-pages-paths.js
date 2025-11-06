@@ -25,7 +25,6 @@ function fixPathsInFile(filePath) {
     // PRIMERO: Limpiar cualquier duplicación existente de manera más agresiva
     // Usar replace directo y múltiples pasadas para asegurar que se reemplace todo
     let hasDuplicates = false;
-    const originalBeforeClean = content;
     let previousContent = '';
     let cleanIterations = 0;
     
@@ -81,10 +80,12 @@ function fixPathsInFile(filePath) {
     } else if (content.includes(`${BASE_PATH}/_expo/`) || content.includes(`${BASE_PATH}/static/`)) {
       // Ya tiene rutas corregidas y no hay duplicaciones, verificar si necesita más procesamiento
       // Solo procesar si hay rutas sin corregir
-      const hasUncorrectedPaths = /src=["']\/(?!Conectando-Corazones\/)_expo\//.test(content) || 
-                                   /href=["']\/(?!Conectando-Corazones\/)_expo\//.test(content) ||
-                                   /src=["']\/(?!Conectando-Corazones\/)static\//.test(content) || 
-                                   /href=["']\/(?!Conectando-Corazones\/)static\//.test(content);
+      // Usar BASE_PATH dinámicamente en lugar de hardcodear "Conectando-Corazones"
+      const basePathEscaped = BASE_PATH.replace('/', '\\/');
+      const hasUncorrectedPaths = new RegExp(`src=["']\\/(?!${basePathEscaped}\\/)_expo\\/`).test(content) || 
+                                   new RegExp(`href=["']\\/(?!${basePathEscaped}\\/)_expo\\/`).test(content) ||
+                                   new RegExp(`src=["']\\/(?!${basePathEscaped}\\/)static\\/`).test(content) || 
+                                   new RegExp(`href=["']\\/(?!${basePathEscaped}\\/)static\\/`).test(content);
       if (!hasUncorrectedPaths) {
         // Ya está todo correcto, no procesar
         return false;
@@ -129,7 +130,7 @@ function fixPathsInFile(filePath) {
     // IMPORTANTE: Excluir rutas que ya tienen el prefijo o que son _expo/static (ya procesadas)
     content = content.replace(/src=["']\/([^"']+)["']/g, (match, path) => {
       if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') || 
-          path.includes('Conectando-Corazones/') ||
+          path.includes(`${BASE_PATH}/`) ||
           path.startsWith('_expo/') || path.startsWith('static/')) {
         return match;
       }
@@ -138,7 +139,7 @@ function fixPathsInFile(filePath) {
     
     content = content.replace(/href=["']\/([^"']+)["']/g, (match, path) => {
       if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') ||
-          path.includes('Conectando-Corazones/') ||
+          path.includes(`${BASE_PATH}/`) ||
           path.startsWith('_expo/') || path.startsWith('static/')) {
         return match;
       }
@@ -146,18 +147,20 @@ function fixPathsInFile(filePath) {
     });
     
     // Reemplazar en JSON y strings (solo si NO tienen el prefijo)
-    content = content.replace(/"\/(?!Conectando-Corazones\/)_expo\//g, `"${BASE_PATH}/_expo/`);
-    content = content.replace(/"\/(?!Conectando-Corazones\/)static\//g, `"${BASE_PATH}/static/`);
-    content = content.replace(/'\/(?!Conectando-Corazones\/)_expo\//g, `'${BASE_PATH}/_expo/`);
-    content = content.replace(/'\/(?!Conectando-Corazones\/)static\//g, `'${BASE_PATH}/static/`);
+    // Usar BASE_PATH dinámicamente en lugar de hardcodear "Conectando-Corazones"
+    const basePathEscaped = BASE_PATH.replace('/', '\\/');
+    content = content.replace(new RegExp(`"\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `"${BASE_PATH}/_expo/`);
+    content = content.replace(new RegExp(`"\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `"${BASE_PATH}/static/`);
+    content = content.replace(new RegExp(`'\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `'${BASE_PATH}/_expo/`);
+    content = content.replace(new RegExp(`'\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `'${BASE_PATH}/static/`);
     
     // Reemplazar en strings de JavaScript
-    content = content.replace(/([^"'])\/(?!Conectando-Corazones\/)_expo\//g, `$1${BASE_PATH}/_expo/`);
-    content = content.replace(/([^"'])\/(?!Conectando-Corazones\/)static\//g, `$1${BASE_PATH}/static/`);
+    content = content.replace(new RegExp(`([^"'])\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `$1${BASE_PATH}/_expo/`);
+    content = content.replace(new RegExp(`([^"'])\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `$1${BASE_PATH}/static/`);
     
     // Reemplazar rutas que empiezan con / al inicio de string
-    content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/(?!Conectando-Corazones\/)_expo\//g, `$1("${BASE_PATH}/_expo/`);
-    content = content.replace(/(import|require|from|src|href)\s*\(?\s*["']\/(?!Conectando-Corazones\/)static\//g, `$1("${BASE_PATH}/static/`);
+    content = content.replace(new RegExp(`(import|require|from|src|href)\\s*\\(?\\s*["']\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `$1("${BASE_PATH}/_expo/`);
+    content = content.replace(new RegExp(`(import|require|from|src|href)\\s*\\(?\\s*["']\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `$1("${BASE_PATH}/static/`);
     
     // Limpiar cualquier duplicación que pueda haber quedado (múltiples pasadas)
     // Patrón más específico: buscar /Conectando-Corazones/_expo/Conectando-Corazones/ y reemplazar
@@ -207,7 +210,6 @@ function fixPathsInDirectory(dir) {
 
   const files = fs.readdirSync(dir, { withFileTypes: true });
   let fixedCount = 0;
-  let processedCount = 0;
 
   for (const file of files) {
     const fullPath = path.join(dir, file.name);
@@ -223,7 +225,6 @@ function fixPathsInDirectory(dir) {
           file.name === '404' ||
           file.name === 'sw.js' ||
           file.name === 'service-worker.js') {
-        processedCount++;
         if (fixPathsInFile(fullPath)) {
           fixedCount++;
         }
