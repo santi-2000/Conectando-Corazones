@@ -42,39 +42,6 @@ class MomsWeekRepository {
   }
 
   /**
-   * Obtener días completados en una semana
-   * @param {string} userId 
-   * @param {string} fechaInicio 
-   * @param {string} fechaFin 
-   * @returns {Promise<Array>}
-   */
-  async getCompletedDays(userId, fechaInicio, fechaFin) {
-    const sql = `
-      SELECT 
-        DATE(fecha_entrada) as dia,
-        COUNT(*) as entradas,
-        SUM(palabras) as total_palabras,
-        SUM(fotos) as total_fotos,
-        SUM(momentos_felices) as total_momentos
-      FROM ${this.tableName}
-      WHERE user_id = ? 
-      AND DATE(fecha_entrada) BETWEEN ? AND ?
-      AND activo = TRUE
-      GROUP BY DATE(fecha_entrada)
-      ORDER BY dia
-    `;
-
-    const results = await query(sql, [userId, fechaInicio, fechaFin]);
-    return results.map(row => ({
-      dia: row.dia,
-      entradas: row.entradas,
-      totalPalabras: row.total_palabras,
-      totalFotos: row.total_fotos,
-      totalMomentos: row.total_momentos
-    }));
-  }
-
-  /**
    * Obtener estadísticas de la semana
    * @param {string} userId 
    * @param {string} fechaInicio 

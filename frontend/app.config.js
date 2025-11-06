@@ -32,7 +32,9 @@ export default {
     web: {
       output: "static",
       bundler: "metro",
-      favicon: "./assets/images/logo-fafore.png"
+      favicon: "./assets/images/logo-fafore.png",
+      // Configuración para GitHub Pages (si el repositorio no está en la raíz)
+      baseUrl: process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}` : undefined
     },
     plugins: [
       "expo-router",

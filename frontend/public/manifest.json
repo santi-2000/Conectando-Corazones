@@ -4,12 +4,15 @@
   "description": "App de apoyo familiar para madres y familias",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#E6F4FE",
   "theme_color": "#E6F4FE",
   "orientation": "portrait",
   "scope": "/",
   "lang": "es",
   "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": [],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

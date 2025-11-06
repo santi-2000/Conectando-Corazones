@@ -261,15 +261,14 @@ export default function ViewPreviousDays() {
               await new Promise(resolve => setTimeout(resolve, 200));
               await fetchEntries();
             } else {
-              // Si no viene en el error, hacer fetch y buscar
+              // Si no viene en el error, hacer fetch y buscar usando los datos frescos devueltos
               console.log('🔄 screen15: Buscando entrada en entries después de fetch...');
-              await fetchEntries();
               
-              // Esperar un momento para que el estado se actualice
-              await new Promise(resolve => setTimeout(resolve, 300));
+              // fetchEntries ahora devuelve las entradas frescas directamente
+              const freshEntries = await fetchEntries();
               
-              // Buscar la entrada existente con la fecha correcta
-              const existingEntry = entries.find(e => {
+              // Buscar la entrada existente con la fecha correcta en los datos frescos
+              const existingEntry = freshEntries.find(e => {
                 let entryDate;
                 if (typeof e.fecha === 'string') {
                   entryDate = e.fecha.includes('T') ? e.fecha.split('T')[0] : e.fecha.slice(0, 10);
@@ -294,7 +293,7 @@ export default function ViewPreviousDays() {
                 console.log('✅ screen15: Entrada actualizada:', result);
               } else {
                 console.error('❌ screen15: No se encontró entrada para fecha:', editingDateISO);
-                console.log('📋 screen15: Entradas disponibles:', entries.map(e => ({
+                console.log('📋 screen15: Entradas disponibles:', freshEntries.map(e => ({
                   id: e.id,
                   fecha: typeof e.fecha === 'string' ? e.fecha.split('T')[0] : toLocalYMD(e.fecha),
                   contenido: e.contenido?.substring(0, 20)

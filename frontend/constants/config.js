@@ -3,10 +3,30 @@ import Constants from 'expo-constants';
 
 // Resolver dinámicamente la URL base del backend según el entorno (web/simulador/dispositivo)
 const resolveApiBaseUrl = () => {
-  // Web desde el mismo equipo
+  // Detectar si estamos en producción (GitHub Pages u otro hosting)
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('github.io') || 
+     window.location.hostname.includes('github.com') ||
+     process.env.NODE_ENV === 'production');
+  
+  // Si hay una variable de entorno para la URL del backend, usarla
+  if (typeof window !== 'undefined' && window.ENV?.API_BASE_URL) {
+    return window.ENV.API_BASE_URL;
+  }
+  
+  // En producción, usar la URL de tu backend desplegado
+  // IMPORTANTE: Cambia esta URL por la de tu backend en producción
+  if (isProduction) {
+    // Ejemplo: 'https://tu-backend.herokuapp.com/api/v1'
+    // O: 'https://api.tudominio.com/api/v1'
+    return process.env.REACT_APP_API_URL || 'https://tu-backend-url.com/api/v1';
+  }
+  
+  // Desarrollo local
   if (Platform.OS === 'web') {
     return 'http://localhost:3000/api/v1';
   }
+  
   // Expo: extraer IP del host (dispositivo físico/simulador)
   const expoConfig = Constants.expoConfig || Constants.manifest;
   const hostUri = expoConfig?.hostUri || expoConfig?.debuggerHost; // p.ej. 192.168.x.x:19000

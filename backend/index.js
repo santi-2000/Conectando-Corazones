@@ -18,18 +18,66 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 
 // CORS
+const getAllowedOrigins = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // En producción, usar variable de entorno o lista por defecto
+    const corsOrigins = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+      : [];
+    
+    // Agregar dominios comunes de GitHub Pages
+    const defaultOrigins = [
+      'https://*.github.io',
+      'https://*.github.com'
+    ];
+    
+    return [...corsOrigins, ...defaultOrigins];
+  }
+  
+  // Desarrollo: permitir localhost y IPs locales
+  return [
+    'http://localhost:3000', 
+    'http://localhost:8081', 
+    'http://localhost:8082',
+    'http://localhost:19006',
+    // Permitir cualquier IP de red local (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
+    /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
+    /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/
+  ];
+};
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://tu-dominio.com'] 
-    : [
-        'http://localhost:3000', 
-        'http://localhost:8081', 
-        'http://localhost:8082',
-        // Permitir cualquier IP de red local (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-        /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,
-        /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,
-        /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$/
-      ],
+  origin: function (origin, callback) {
+    // Permitir requests sin origen (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = getAllowedOrigins();
+    
+    // Verificar si el origen está permitido
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        // Soporte para wildcards
+        if (allowed.includes('*')) {
+          const pattern = allowed.replace(/\*/g, '.*');
+          return new RegExp(`^${pattern}$`).test(origin);
+        }
+        return allowed === origin;
+      }
+      // Regex patterns
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️ CORS bloqueado para origen: ${origin}`);
+      callback(new Error('No permitido por CORS'));
+    }
+  },
   credentials: true
 }));
 

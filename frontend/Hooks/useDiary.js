@@ -14,7 +14,7 @@ export const useDiary = (userId = 'test_review') => {
       console.log('🔄 useDiary: petición en curso, debounce...');
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => fetchEntries(filters), 300);
-      return;
+      return [];
     }
     try {
       inFlightRef.current = true;
@@ -30,8 +30,10 @@ export const useDiary = (userId = 'test_review') => {
       if (payload?.estadisticas) {
         setStats(payload.estadisticas);
       }
+      return dataEntries;
     } catch (err) {
       setError(err.message || 'Error al cargar entradas del diario');
+      return [];
     } finally {
       inFlightRef.current = false;
       setLoading(false);
