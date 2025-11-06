@@ -19,7 +19,7 @@ const resolveApiBaseUrl = () => {
   if (isProduction) {
     // Ejemplo: 'https://tu-backend.herokuapp.com/api/v1'
     // O: 'https://api.tudominio.com/api/v1'
-    return process.env.REACT_APP_API_URL || 'https://tu-backend-url.com/api/v1';
+    return process.env.REACT_APP_API_URL || 'https://conectando-corazones-8ias.onrender.com';
   }
   
   // Desarrollo local
