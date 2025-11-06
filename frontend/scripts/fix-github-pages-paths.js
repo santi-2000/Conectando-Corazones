@@ -2,346 +2,307 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Script para corregir las rutas en los archivos generados por Expo
- * para que funcionen correctamente en GitHub Pages (subdirectorio)
+ * Script NUEVO y SIMPLIFICADO para corregir rutas en archivos generados por Expo
+ * para GitHub Pages (subdirectorio)
+ * 
+ * Estrategia:
+ * 1. PRIMERO: Limpiar TODAS las duplicaciones de manera agresiva
+ * 2. SEGUNDO: Asegurar que las rutas tengan el prefijo correcto
  */
 const BASE_PATH = '/Conectando-Corazones';
 const DIST_DIR = path.join(__dirname, '../dist');
 
+/**
+ * Limpia duplicaciones de manera agresiva
+ */
+function cleanDuplications(content) {
+  let cleaned = content;
+  let previous = '';
+  let iterations = 0;
+  
+  // Hacer múltiples pasadas hasta que no haya más cambios
+  while (cleaned !== previous && iterations < 10) {
+    previous = cleaned;
+    iterations++;
+    
+    // Escapar BASE_PATH para usar en regex
+    const escaped = BASE_PATH.replace(/\//g, '\\/');
+    
+    // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
+    cleaned = cleaned.replace(
+      new RegExp(`${escaped}/_expo/${escaped}/`, 'g'),
+      `${BASE_PATH}/_expo/`
+    );
+    
+    // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
+    cleaned = cleaned.replace(
+      new RegExp(`${escaped}/static/${escaped}/`, 'g'),
+      `${BASE_PATH}/static/`
+    );
+    
+    // Patrón 3: /Conectando-Corazones/Conectando-Corazones/ -> /Conectando-Corazones/
+    cleaned = cleaned.replace(
+      new RegExp(`${escaped}${escaped}/`, 'g'),
+      `${BASE_PATH}/`
+    );
+    
+    // Patrón 4: En atributos src/href específicamente
+    cleaned = cleaned.replace(
+      new RegExp(`(src=["'])${escaped}/_expo/${escaped}/`, 'g'),
+      `$1${BASE_PATH}/_expo/`
+    );
+    
+    cleaned = cleaned.replace(
+      new RegExp(`(href=["'])${escaped}/_expo/${escaped}/`, 'g'),
+      `$1${BASE_PATH}/_expo/`
+    );
+    
+    cleaned = cleaned.replace(
+      new RegExp(`(src=["'])${escaped}/static/${escaped}/`, 'g'),
+      `$1${BASE_PATH}/static/`
+    );
+    
+    cleaned = cleaned.replace(
+      new RegExp(`(href=["'])${escaped}/static/${escaped}/`, 'g'),
+      `$1${BASE_PATH}/static/`
+    );
+  }
+  
+  if (iterations > 1) {
+    console.log(`  🔧 Limpieza completada en ${iterations} iteraciones`);
+  }
+  
+  return cleaned;
+}
+
+/**
+ * Corrige rutas en un archivo
+ */
 function fixPathsInFile(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');
     const originalContent = content;
     const isHtml = filePath.endsWith('.html');
-
-    // Para archivos HTML, NO usar tag <base> porque causa duplicación
-    // En su lugar, reemplazar todas las rutas absolutas directamente
-    // Si ya tiene tag <base>, quitarlo
+    
+    // Paso 1: Remover tag <base> si existe (causa problemas)
     if (isHtml && content.includes('<base')) {
       content = content.replace(/<base[^>]*>/i, '');
-      console.log(`✅ Removido tag <base> de: ${filePath}`);
+      console.log(`  ✅ Removido tag <base>`);
     }
-
-    // PRIMERO: Limpiar cualquier duplicación existente de manera más agresiva
-    // Usar replace directo y múltiples pasadas para asegurar que se reemplace todo
-    let hasDuplicates = false;
-    let previousContent = '';
-    let cleanIterations = 0;
     
-    // Hacer múltiples pasadas hasta que no haya más cambios
-    while (content !== previousContent && cleanIterations < 10) {
-      previousContent = content;
-      cleanIterations++;
-      
-      // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
-      // Usar un patrón más específico que capture todo hasta el siguiente /
-      // También capturar el caso completo sin lookahead para asegurar que funcione
-      const pattern1a = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-      const before1a = content;
-      content = content.replace(pattern1a, `${BASE_PATH}/_expo/`);
-      if (content !== before1a) {
-        hasDuplicates = true;
-        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo (patrón completo), limpiando...`);
+    // Paso 2: LIMPIAR TODAS LAS DUPLICACIONES PRIMERO (muy importante)
+    content = cleanDuplications(content);
+    
+    // Paso 3: Corregir rutas que empiezan con /_expo/ o /static/ (sin prefijo)
+    // Solo si NO tienen el prefijo ya
+    const escaped = BASE_PATH.replace(/\//g, '\\/');
+    
+    // Rutas en src/href que empiezan con /_expo/ pero NO tienen el prefijo
+    content = content.replace(
+      new RegExp(`src=["']\\/(_expo\\/[^"']+)["']`, 'g'),
+      (match, path) => {
+        // Si ya tiene el prefijo, no modificar
+        if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) {
+          return match;
+        }
+        return `src="${BASE_PATH}/${path}"`;
       }
-      
-      // También el patrón con lookahead para casos sin la barra final
-      const pattern1b = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
-      const before1b = content;
-      content = content.replace(pattern1b, `${BASE_PATH}/_expo`);
-      if (content !== before1b) {
-        hasDuplicates = true;
-        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo (lookahead), limpiando...`);
+    );
+    
+    content = content.replace(
+      new RegExp(`href=["']\\/(_expo\\/[^"']+)["']`, 'g'),
+      (match, path) => {
+        if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) {
+          return match;
+        }
+        return `href="${BASE_PATH}/${path}"`;
       }
-      
-      // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
-      const pattern2 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
-      const before2 = content;
-      content = content.replace(pattern2, `${BASE_PATH}/static`);
-      if (content !== before2) {
-        hasDuplicates = true;
-        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en static, limpiando...`);
+    );
+    
+    // Rutas en src/href que empiezan con /static/ pero NO tienen el prefijo
+    content = content.replace(
+      new RegExp(`src=["']\\/(static\\/[^"']+)["']`, 'g'),
+      (match, path) => {
+        // Verificar contexto: si antes de /static/ ya hay BASE_PATH, no modificar
+        const fullMatch = match;
+        const beforeStatic = fullMatch.substring(0, fullMatch.indexOf('/static/'));
+        if (beforeStatic.includes(`${BASE_PATH}/`)) {
+          return match;
+        }
+        if (path.includes(`${BASE_PATH}/`)) {
+          return match;
+        }
+        return `src="${BASE_PATH}/${path}"`;
       }
-      
-      // Patrón 3: /Conectando-Corazones/Conectando-Corazones/ -> /Conectando-Corazones/
-      const pattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
-      const before3 = content;
-      content = content.replace(pattern3, BASE_PATH);
-      if (content !== before3) {
-        hasDuplicates = true;
-        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación completa, limpiando...`);
+    );
+    
+    content = content.replace(
+      new RegExp(`href=["']\\/(static\\/[^"']+)["']`, 'g'),
+      (match, path) => {
+        const fullMatch = match;
+        const beforeStatic = fullMatch.substring(0, fullMatch.indexOf('/static/'));
+        if (beforeStatic.includes(`${BASE_PATH}/`)) {
+          return match;
+        }
+        if (path.includes(`${BASE_PATH}/`)) {
+          return match;
+        }
+        return `href="${BASE_PATH}/${path}"`;
       }
-      
-      // Patrón 4: Buscar y reemplazar directamente en src/href attributes
-      // src="/Conectando-Corazones/_expo/Conectando-Corazones/static/..." -> src="/Conectando-Corazones/_expo/static/..."
-      const pattern4a = new RegExp(`(src=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-      content = content.replace(pattern4a, `$1${BASE_PATH}/_expo/`);
-      
-      const pattern4b = new RegExp(`(href=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-      content = content.replace(pattern4b, `$1${BASE_PATH}/_expo/`);
-    }
+    );
     
-    if (cleanIterations > 1) {
-      console.log(`🔧 ${filePath}: Limpieza de duplicaciones completada en ${cleanIterations} iteraciones`);
-    }
-    
-    // Si había duplicaciones, guardar y continuar para verificar otras rutas
-    if (hasDuplicates) {
-      // Continuar procesamiento para asegurar que todas las rutas estén correctas
-    } else if (content.includes(`${BASE_PATH}/_expo/`) || content.includes(`${BASE_PATH}/static/`)) {
-      // Ya tiene rutas corregidas y no hay duplicaciones, verificar si necesita más procesamiento
-      // Solo procesar si hay rutas sin corregir
-      // Usar BASE_PATH dinámicamente en lugar de hardcodear "Conectando-Corazones"
-      const basePathEscaped = BASE_PATH.replace('/', '\\/');
-      const hasUncorrectedPaths = new RegExp(`src=["']\\/(?!${basePathEscaped}\\/)_expo\\/`).test(content) || 
-                                   new RegExp(`href=["']\\/(?!${basePathEscaped}\\/)_expo\\/`).test(content) ||
-                                   new RegExp(`src=["']\\/(?!${basePathEscaped}\\/)static\\/`).test(content) || 
-                                   new RegExp(`href=["']\\/(?!${basePathEscaped}\\/)static\\/`).test(content);
-      if (!hasUncorrectedPaths) {
-        // Ya está todo correcto, no procesar
-        return false;
+    // Paso 4: Corregir en strings JSON/JavaScript (import, require, etc.)
+    // Solo rutas que empiezan con /_expo/ o /static/ sin el prefijo
+    content = content.replace(
+      new RegExp(`"\\/(_expo\\/[^"]+)"`, 'g'),
+      (match, path) => {
+        if (path.includes(`${BASE_PATH}/`)) return match;
+        return `"${BASE_PATH}/${path}"`;
       }
-    }
+    );
     
-    // Reemplazar rutas en src/href (solo si NO tienen el prefijo)
-    // IMPORTANTE: Verificar que la ruta completa NO tenga el prefijo antes de agregarlo
-    // PRIMERO: Limpiar duplicaciones específicas en src/href antes de procesar
-    // Patrón: src="/Conectando-Corazones/_expo/Conectando-Corazones/..." -> src="/Conectando-Corazones/_expo/..."
-    // Hacer múltiples pasadas para asegurar que se limpie todo
-    let previousDupContent = '';
-    let dupIterations = 0;
-    while (content !== previousDupContent && dupIterations < 5) {
-      previousDupContent = content;
-      dupIterations++;
-      
-      // Limpiar en src
-      const duplicatePattern1 = new RegExp(`(src=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-      content = content.replace(duplicatePattern1, `$1${BASE_PATH}/_expo/`);
-      
-      // Limpiar en href
-      const duplicatePattern2 = new RegExp(`(href=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-      content = content.replace(duplicatePattern2, `$1${BASE_PATH}/_expo/`);
-      
-      // También limpiar sin las comillas (por si acaso)
-      const duplicatePattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
-      content = content.replace(duplicatePattern3, `${BASE_PATH}/_expo/`);
-    }
-    
-    if (dupIterations > 1) {
-      console.log(`🔧 ${filePath}: Limpieza de duplicaciones en src/href completada en ${dupIterations} iteraciones`);
-    }
-    
-    // Ahora procesar rutas normales
-    content = content.replace(/src=["']\/(_expo\/[^"']+)["']/g, (match, path) => {
-      // Si el path ya contiene el prefijo completo, no modificar
-      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
-      return `src="${BASE_PATH}/${path}"`;
-    });
-    
-    content = content.replace(/href=["']\/(_expo\/[^"']+)["']/g, (match, path) => {
-      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
-      return `href="${BASE_PATH}/${path}"`;
-    });
-    
-    // Para static, ser más cuidadoso - solo reemplazar si NO está dentro de _expo con prefijo
-    // IMPORTANTE: Solo capturar rutas que empiezan directamente con /static/ (no dentro de otra ruta)
-    content = content.replace(/src=["']\/(static\/[^"']+)["']/g, (match, path) => {
-      // Verificar el contexto completo antes de /static/
-      const fullMatch = match;
-      const beforeStatic = fullMatch.substring(0, fullMatch.indexOf('/static/'));
-      // Si ya tiene el prefijo antes de /static/, no modificar
-      if (beforeStatic.includes(`${BASE_PATH}/`)) return match;
-      // Si el path capturado ya contiene el prefijo, no modificar
-      if (path.includes(`${BASE_PATH}/`)) return match;
-      return `src="${BASE_PATH}/${path}"`;
-    });
-    
-    content = content.replace(/href=["']\/(static\/[^"']+)["']/g, (match, path) => {
-      const fullMatch = match;
-      const beforeStatic = fullMatch.substring(0, fullMatch.indexOf('/static/'));
-      if (beforeStatic.includes(`${BASE_PATH}/`)) return match;
-      if (path.includes(`${BASE_PATH}/`)) return match;
-      return `href="${BASE_PATH}/${path}"`;
-    });
-    
-    // Reemplazar otras rutas absolutas (solo si NO tienen el prefijo)
-    // IMPORTANTE: Excluir rutas que ya tienen el prefijo o que son _expo/static (ya procesadas)
-    content = content.replace(/src=["']\/([^"']+)["']/g, (match, path) => {
-      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') || 
-          path.includes(`${BASE_PATH}/`) ||
-          path.startsWith('_expo/') || path.startsWith('static/')) {
-        return match;
+    content = content.replace(
+      new RegExp(`"\\/(static\\/[^"]+)"`, 'g'),
+      (match, path) => {
+        if (path.includes(`${BASE_PATH}/`)) return match;
+        return `"${BASE_PATH}/${path}"`;
       }
-      return `src="${BASE_PATH}/${path}"`;
-    });
+    );
     
-    content = content.replace(/href=["']\/([^"']+)["']/g, (match, path) => {
-      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') ||
-          path.includes(`${BASE_PATH}/`) ||
-          path.startsWith('_expo/') || path.startsWith('static/')) {
-        return match;
-      }
-      return `href="${BASE_PATH}/${path}"`;
-    });
+    // Paso 5: Limpiar duplicaciones una vez más por si acaso
+    content = cleanDuplications(content);
     
-    // Reemplazar en JSON y strings (solo si NO tienen el prefijo)
-    // Usar BASE_PATH dinámicamente en lugar de hardcodear "Conectando-Corazones"
-    const basePathEscaped = BASE_PATH.replace('/', '\\/');
-    content = content.replace(new RegExp(`"\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `"${BASE_PATH}/_expo/`);
-    content = content.replace(new RegExp(`"\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `"${BASE_PATH}/static/`);
-    content = content.replace(new RegExp(`'\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `'${BASE_PATH}/_expo/`);
-    content = content.replace(new RegExp(`'\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `'${BASE_PATH}/static/`);
-    
-    // Reemplazar en strings de JavaScript
-    content = content.replace(new RegExp(`([^"'])\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `$1${BASE_PATH}/_expo/`);
-    content = content.replace(new RegExp(`([^"'])\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `$1${BASE_PATH}/static/`);
-    
-    // Reemplazar rutas que empiezan con / al inicio de string
-    content = content.replace(new RegExp(`(import|require|from|src|href)\\s*\\(?\\s*["']\\/(?!${basePathEscaped}\\/)_expo\\/`, 'g'), `$1("${BASE_PATH}/_expo/`);
-    content = content.replace(new RegExp(`(import|require|from|src|href)\\s*\\(?\\s*["']\\/(?!${basePathEscaped}\\/)static\\/`, 'g'), `$1("${BASE_PATH}/static/`);
-    
-    // Limpiar cualquier duplicación que pueda haber quedado (múltiples pasadas)
-    // Patrón más específico: buscar /Conectando-Corazones/_expo/Conectando-Corazones/ y reemplazar
-    let previousContentFinal = '';
-    let iterations = 0;
-    while (content !== previousContentFinal && iterations < 5) {
-      previousContentFinal = content;
-      iterations++;
-      
-      // Limpiar duplicaciones específicas
-      content = content.replace(
-        new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
-        `${BASE_PATH}/_expo/`
-      );
-      content = content.replace(
-        new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
-        `${BASE_PATH}/static/`
-      );
-      content = content.replace(
-        new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}/`, 'g'),
-        `${BASE_PATH}/`
-      );
-    }
-    
-    if (iterations > 1) {
-      console.log(`🔧 ${filePath}: Limpiadas duplicaciones en ${iterations} iteraciones`);
-    }
-
-    // Si el contenido cambió, guardar
+    // Guardar si hubo cambios
     if (content !== originalContent) {
       fs.writeFileSync(filePath, content, 'utf8');
-      console.log(`✅ Corregido: ${filePath}`);
       return true;
     }
+    
     return false;
   } catch (error) {
-    console.error(`❌ Error procesando ${filePath}:`, error.message);
+    console.error(`  ❌ Error procesando ${filePath}:`, error.message);
     return false;
   }
 }
 
-function fixPathsInDirectory(dir) {
+/**
+ * Procesa un directorio recursivamente
+ */
+function processDirectory(dir) {
   if (!fs.existsSync(dir)) {
     console.log(`⚠️  Directorio no existe: ${dir}`);
     return 0;
   }
-
+  
   const files = fs.readdirSync(dir, { withFileTypes: true });
   let fixedCount = 0;
-
+  
   for (const file of files) {
     const fullPath = path.join(dir, file.name);
-
+    
     if (file.isDirectory()) {
-      const subCount = fixPathsInDirectory(fullPath);
+      const subCount = processDirectory(fullPath);
       fixedCount += subCount;
     } else if (file.isFile()) {
-      // Procesar archivos HTML, JS, JSON, CSS, y también archivos sin extensión que podrían ser HTML
-      // También procesar Service Workers y otros archivos importantes
+      // Procesar archivos HTML, JS, JSON, CSS, map, y service workers
       if (/\.(html|js|json|css|map)$/.test(file.name) || 
           file.name === 'index' || 
           file.name === '404' ||
           file.name === 'sw.js' ||
           file.name === 'service-worker.js') {
+        const relativePath = path.relative(DIST_DIR, fullPath);
         if (fixPathsInFile(fullPath)) {
+          console.log(`✅ ${relativePath}`);
           fixedCount++;
         }
       }
     }
   }
-
+  
   return fixedCount;
 }
 
+/**
+ * Verifica archivos HTML para problemas
+ */
+function verifyHtmlFiles(dir) {
+  const htmlFiles = [];
+  
+  function findHtmlFiles(currentDir) {
+    if (!fs.existsSync(currentDir)) return;
+    const files = fs.readdirSync(currentDir, { withFileTypes: true });
+    for (const file of files) {
+      const fullPath = path.join(currentDir, file.name);
+      if (file.isDirectory()) {
+        findHtmlFiles(fullPath);
+      } else if (file.isFile() && file.name.endsWith('.html')) {
+        htmlFiles.push(fullPath);
+      }
+    }
+  }
+  
+  findHtmlFiles(dir);
+  
+  let issues = 0;
+  htmlFiles.forEach(file => {
+    try {
+      const content = fs.readFileSync(file, 'utf8');
+      const relativePath = path.relative(dir, file);
+      
+      // Buscar rutas problemáticas
+      const problematic = [
+        /src=["']\/_expo\//g,
+        /href=["']\/_expo\//g,
+        /src=["']\/static\//g,
+        /href=["']\/static\//g,
+        new RegExp(`${BASE_PATH.replace(/\//g, '\\/')}/_expo/${BASE_PATH.replace(/\//g, '\\/')}/`, 'g'),
+        new RegExp(`${BASE_PATH.replace(/\//g, '\\/')}/static/${BASE_PATH.replace(/\//g, '\\/')}/`, 'g')
+      ];
+      
+      const hasIssues = problematic.some(pattern => pattern.test(content));
+      
+      if (hasIssues) {
+        console.warn(`⚠️  ${relativePath} - Aún tiene problemas`);
+        issues++;
+      } else {
+        console.log(`✅ ${relativePath} - OK`);
+      }
+    } catch (error) {
+      console.error(`❌ Error verificando ${file}:`, error.message);
+      issues++;
+    }
+  });
+  
+  return { total: htmlFiles.length, issues };
+}
+
+// ============================================
+// EJECUCIÓN PRINCIPAL
+// ============================================
 console.log('🔧 Corrigiendo rutas para GitHub Pages...');
 console.log(`📁 Directorio: ${DIST_DIR}`);
 console.log(`🔗 Base path: ${BASE_PATH}\n`);
 
-// Verificar que el directorio existe antes de procesar
+// Verificar que el directorio existe
 if (!fs.existsSync(DIST_DIR)) {
   console.error(`❌ ERROR: El directorio ${DIST_DIR} no existe.`);
   console.error('   Asegúrate de que el build de Expo se haya ejecutado correctamente.');
   process.exit(1);
 }
 
-const fixed = fixPathsInDirectory(DIST_DIR);
-console.log(`\n✅ Proceso completado. ${fixed} archivos modificados.`);
-
-// Listar algunos archivos importantes para verificar
-console.log('\n🔍 Verificando archivos importantes...');
-const importantFiles = ['index.html'];
-const htmlFiles = [];
-
-// Buscar todos los archivos HTML
-function findHtmlFiles(dir, baseDir = dir) {
-  if (!fs.existsSync(dir)) return;
-  const files = fs.readdirSync(dir, { withFileTypes: true });
-  for (const file of files) {
-    const fullPath = path.join(dir, file.name);
-    if (file.isDirectory()) {
-      findHtmlFiles(fullPath, baseDir);
-    } else if (file.isFile() && file.name.endsWith('.html')) {
-      htmlFiles.push(path.relative(baseDir, fullPath));
-    }
-  }
-}
-
-findHtmlFiles(DIST_DIR);
+// Procesar todos los archivos
+const fixed = processDirectory(DIST_DIR);
+console.log(`\n✅ Proceso completado. ${fixed} archivo(s) modificado(s).`);
 
 // Verificar archivos HTML
-let htmlIssues = 0;
-htmlFiles.forEach(file => {
-  const fullPath = path.join(DIST_DIR, file);
-  try {
-    const content = fs.readFileSync(fullPath, 'utf8');
-    // Buscar rutas problemáticas
-    const problematicPatterns = [
-      /src=["']\/_expo\//g,
-      /href=["']\/_expo\//g,
-      /src=["']\/static\//g,
-      /href=["']\/static\//g
-    ];
-    
-    let hasIssues = false;
-    problematicPatterns.forEach(pattern => {
-      if (pattern.test(content)) {
-        hasIssues = true;
-      }
-    });
-    
-    if (hasIssues) {
-      console.warn(`⚠️  ADVERTENCIA: ${file} aún contiene rutas sin corregir`);
-      htmlIssues++;
-    } else {
-      console.log(`✅ ${file} - OK`);
-    }
-  } catch (error) {
-    console.error(`❌ Error verificando ${file}:`, error.message);
-  }
-});
+console.log('\n🔍 Verificando archivos HTML...');
+const verification = verifyHtmlFiles(DIST_DIR);
 
-if (htmlIssues === 0 && htmlFiles.length > 0) {
-  console.log(`\n✅ Todos los archivos HTML están correctos (${htmlFiles.length} archivos verificados)`);
-} else if (htmlIssues > 0) {
-  console.warn(`\n⚠️  ${htmlIssues} archivo(s) HTML aún tienen problemas`);
+if (verification.issues === 0 && verification.total > 0) {
+  console.log(`\n✅ Todos los archivos HTML están correctos (${verification.total} archivos verificados)`);
+} else if (verification.issues > 0) {
+  console.warn(`\n⚠️  ${verification.issues} archivo(s) HTML aún tienen problemas`);
+  process.exit(1);
 }
 
+console.log('\n🎉 ¡Deploy listo!');
