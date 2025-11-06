@@ -5,15 +5,31 @@ const { query } = require('../../config/database');
  */
 async function getDatabaseInfo() {
   try {
-    // Probar conexión básica
+    // Probar conexión básica (esto confirma que la conexión funciona)
     const connectionTest = await query('SELECT 1 as test');
+    
+    if (!connectionTest || connectionTest.length === 0) {
+      return {
+        connected: false,
+        error: 'No se pudo ejecutar consulta de prueba'
+      };
+    }
     
     // Obtener información de la base de datos
     const dbVersion = await query('SELECT VERSION() as version');
     const dbName = await query('SELECT DATABASE() as database_name');
     const dbUser = await query('SELECT USER() as user');
     
-    // Contar registros en tablas principales (con manejo de errores si no existen)
+    // Obtener lista de tablas existentes
+    let existingTables = [];
+    try {
+      const tablesResult = await query('SHOW TABLES');
+      existingTables = tablesResult.map(row => Object.values(row)[0]);
+    } catch (error) {
+      console.warn('No se pudieron listar las tablas:', error.message);
+    }
+    
+    // Contar registros en tablas principales (solo si existen)
     const tableCounts = {};
     const tablesToCheck = [
       'educational_books',
@@ -26,11 +42,14 @@ async function getDatabaseInfo() {
     ];
     
     for (const tableName of tablesToCheck) {
-      try {
-        const result = await query(`SELECT COUNT(*) as count FROM ${tableName}`);
-        tableCounts[tableName] = result[0]?.count || 0;
-      } catch (error) {
-        // Si la tabla no existe, simplemente marcarla como 0
+      if (existingTables.includes(tableName)) {
+        try {
+          const result = await query(`SELECT COUNT(*) as count FROM ${tableName}`);
+          tableCounts[tableName] = result[0]?.count || 0;
+        } catch (error) {
+          tableCounts[tableName] = `Error: ${error.message}`;
+        }
+      } else {
         tableCounts[tableName] = 'No existe';
       }
     }
@@ -40,7 +59,9 @@ async function getDatabaseInfo() {
       version: dbVersion[0]?.version,
       database: dbName[0]?.database_name,
       user: dbUser[0]?.user,
-      tables: tableCounts
+      tables: tableCounts,
+      existingTables: existingTables,
+      totalTables: existingTables.length
     };
   } catch (error) {
     return {
