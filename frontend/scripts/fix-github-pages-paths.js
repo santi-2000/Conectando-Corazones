@@ -22,19 +22,39 @@ function fixPathsInFile(filePath) {
       console.log(`✅ Removido tag <base> de: ${filePath}`);
     }
 
-    // Estrategia: Reemplazar solo rutas que NO tienen ya el prefijo
-    // Verificar si el archivo ya tiene rutas corregidas - si las tiene, NO procesar
-    if (content.includes(`${BASE_PATH}/_expo/`) || content.includes(`${BASE_PATH}/static/`)) {
-      // Verificar si hay duplicaciones (múltiples prefijos)
-      const duplicatePattern = new RegExp(`${BASE_PATH.replace('/', '\\/')}.*${BASE_PATH.replace('/', '\\/')}`, 'g');
-      if (duplicatePattern.test(content)) {
+    // PRIMERO: Limpiar cualquier duplicación existente
+    // Buscar patrones como /Conectando-Corazones/Conectando-Corazones/ o /Conectando-Corazones/_expo/Conectando-Corazones/
+    const duplicatePatterns = [
+      // Duplicación completa: /Conectando-Corazones/Conectando-Corazones/
+      new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}`, 'g'),
+      // Duplicación en rutas: /Conectando-Corazones/_expo/Conectando-Corazones/
+      new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
+      // Duplicación en rutas: /Conectando-Corazones/static/Conectando-Corazones/
+      new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g'),
+    ];
+    
+    let hasDuplicates = false;
+    duplicatePatterns.forEach(pattern => {
+      if (pattern.test(content)) {
+        hasDuplicates = true;
         console.warn(`⚠️  ${filePath} tiene rutas duplicadas, limpiando...`);
-        // Limpiar duplicaciones: reemplazar múltiples prefijos por uno solo
-        content = content.replace(new RegExp(`${BASE_PATH.replace('/', '\\/')}+`, 'g'), BASE_PATH);
-        // Luego reemplazar cualquier ruta que tenga el prefijo duplicado
-        content = content.replace(new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}`, 'g'), BASE_PATH);
-      } else {
-        // Ya está correcto, no procesar
+        // Reemplazar duplicaciones: quitar el segundo prefijo
+        content = content.replace(pattern, `${BASE_PATH}/`);
+      }
+    });
+    
+    // Si había duplicaciones, guardar y continuar para verificar otras rutas
+    if (hasDuplicates) {
+      // Continuar procesamiento para asegurar que todas las rutas estén correctas
+    } else if (content.includes(`${BASE_PATH}/_expo/`) || content.includes(`${BASE_PATH}/static/`)) {
+      // Ya tiene rutas corregidas y no hay duplicaciones, verificar si necesita más procesamiento
+      // Solo procesar si hay rutas sin corregir
+      const hasUncorrectedPaths = /src=["']\/(?!Conectando-Corazones\/)_expo\//.test(content) || 
+                                   /href=["']\/(?!Conectando-Corazones\/)_expo\//.test(content) ||
+                                   /src=["']\/(?!Conectando-Corazones\/)static\//.test(content) || 
+                                   /href=["']\/(?!Conectando-Corazones\/)static\//.test(content);
+      if (!hasUncorrectedPaths) {
+        // Ya está todo correcto, no procesar
         return false;
       }
     }
