@@ -14,14 +14,28 @@ function fixPathsInFile(filePath) {
     const originalContent = content;
 
     // Reemplazar rutas absolutas que empiezan con /_expo (en cualquier contexto)
+    // Esto debe ir PRIMERO para capturar todas las ocurrencias
     content = content.replace(/\/_expo\//g, `${BASE_PATH}/_expo/`);
     
     // Reemplazar rutas absolutas que empiezan con /static
     content = content.replace(/\/static\//g, `${BASE_PATH}/static/`);
 
     // Reemplazar rutas absolutas en src/href de scripts y links (más específico)
-    content = content.replace(/src=["']\/([^"']+)["']/g, `src="${BASE_PATH}/$1"`);
-    content = content.replace(/href=["']\/([^"']+)["']/g, `href="${BASE_PATH}/$1"`);
+    // Capturar cualquier ruta que empiece con / y no sea http:// o https://
+    content = content.replace(/src=["']\/([^"']+)["']/g, (match, path) => {
+      // No modificar si es una URL completa
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        return match;
+      }
+      return `src="${BASE_PATH}/${path}"`;
+    });
+    content = content.replace(/href=["']\/([^"']+)["']/g, (match, path) => {
+      // No modificar si es una URL completa
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        return match;
+      }
+      return `href="${BASE_PATH}/${path}"`;
+    });
     
     // Reemplazar en JSON (para manifest, etc) - con comillas simples y dobles
     content = content.replace(/"\/_expo\//g, `"${BASE_PATH}/_expo/`);
@@ -95,14 +109,61 @@ const fixed = fixPathsInDirectory(DIST_DIR);
 console.log(`\n✅ Proceso completado. ${fixed} archivos modificados.`);
 
 // Listar algunos archivos importantes para verificar
-const importantFiles = ['index.html', '_expo/static/js/web/entry.js'];
-importantFiles.forEach(file => {
-  const fullPath = path.join(DIST_DIR, file);
-  if (fs.existsSync(fullPath)) {
-    const content = fs.readFileSync(fullPath, 'utf8');
-    if (content.includes('/_expo/') && !content.includes(`${BASE_PATH}/_expo/`)) {
-      console.warn(`⚠️  ADVERTENCIA: ${file} aún contiene rutas sin corregir`);
+console.log('\n🔍 Verificando archivos importantes...');
+const importantFiles = ['index.html'];
+const htmlFiles = [];
+
+// Buscar todos los archivos HTML
+function findHtmlFiles(dir, baseDir = dir) {
+  if (!fs.existsSync(dir)) return;
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+    if (file.isDirectory()) {
+      findHtmlFiles(fullPath, baseDir);
+    } else if (file.isFile() && file.name.endsWith('.html')) {
+      htmlFiles.push(path.relative(baseDir, fullPath));
     }
   }
+}
+
+findHtmlFiles(DIST_DIR);
+
+// Verificar archivos HTML
+let htmlIssues = 0;
+htmlFiles.forEach(file => {
+  const fullPath = path.join(DIST_DIR, file);
+  try {
+    const content = fs.readFileSync(fullPath, 'utf8');
+    // Buscar rutas problemáticas
+    const problematicPatterns = [
+      /src=["']\/_expo\//g,
+      /href=["']\/_expo\//g,
+      /src=["']\/static\//g,
+      /href=["']\/static\//g
+    ];
+    
+    let hasIssues = false;
+    problematicPatterns.forEach(pattern => {
+      if (pattern.test(content)) {
+        hasIssues = true;
+      }
+    });
+    
+    if (hasIssues) {
+      console.warn(`⚠️  ADVERTENCIA: ${file} aún contiene rutas sin corregir`);
+      htmlIssues++;
+    } else {
+      console.log(`✅ ${file} - OK`);
+    }
+  } catch (error) {
+    console.error(`❌ Error verificando ${file}:`, error.message);
+  }
 });
+
+if (htmlIssues === 0 && htmlFiles.length > 0) {
+  console.log(`\n✅ Todos los archivos HTML están correctos (${htmlFiles.length} archivos verificados)`);
+} else if (htmlIssues > 0) {
+  console.warn(`\n⚠️  ${htmlIssues} archivo(s) HTML aún tienen problemas`);
+}
 

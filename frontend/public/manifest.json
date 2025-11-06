@@ -15,49 +15,49 @@
   "related_applications": [],
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
+      "src": "/Conectando-Corazones/icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-96x96.png",
+      "src": "/Conectando-Corazones/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-128x128.png",
+      "src": "/Conectando-Corazones/icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-144x144.png",
+      "src": "/Conectando-Corazones/icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-152x152.png",
+      "src": "/Conectando-Corazones/icons/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/Conectando-Corazones/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-384x384.png",
+      "src": "/Conectando-Corazones/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/Conectando-Corazones/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -66,7 +66,7 @@
   "categories": ["education", "lifestyle", "social"],
   "screenshots": [
     {
-      "src": "/screenshots/mobile-screenshot.png",
+      "src": "/Conectando-Corazones/screenshots/mobile-screenshot.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow"
@@ -77,10 +77,10 @@
       "name": "Directorio de Apoyo",
       "short_name": "Directorio",
       "description": "Acceso directo al directorio de apoyo",
-      "url": "/Directorio/screen6",
+      "url": "/Conectando-Corazones/Directorio/screen6",
       "icons": [
         {
-          "src": "/icons/shortcut-directorio.png",
+          "src": "/Conectando-Corazones/icons/shortcut-directorio.png",
           "sizes": "96x96"
         }
       ]
@@ -89,10 +89,10 @@
       "name": "Biblioteca Escolar",
       "short_name": "Biblioteca",
       "description": "Acceso directo a la biblioteca escolar",
-      "url": "/Biblioteca/screen1",
+      "url": "/Conectando-Corazones/Biblioteca/screen1",
       "icons": [
         {
-          "src": "/icons/shortcut-biblioteca.png",
+          "src": "/Conectando-Corazones/icons/shortcut-biblioteca.png",
           "sizes": "96x96"
         }
       ]
