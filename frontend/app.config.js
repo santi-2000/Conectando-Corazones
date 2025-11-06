@@ -33,8 +33,9 @@ export default {
       output: "static",
       bundler: "metro",
       favicon: "./assets/images/logo-fafore.png",
-      // Configuración para GitHub Pages - el repositorio es Conectando-Corazones
-      baseUrl: process.env.EXPO_PUBLIC_BASE_URL || "/Conectando-Corazones"
+      // NO usar baseUrl aquí - el script lo agregará después
+      // Esto evita que Expo genere rutas con duplicación
+      // baseUrl: process.env.EXPO_PUBLIC_BASE_URL || "/Conectando-Corazones"
     },
     plugins: [
       "expo-router",
