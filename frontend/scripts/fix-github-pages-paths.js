@@ -12,26 +12,44 @@ function fixPathsInFile(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');
     const originalContent = content;
+    const isHtml = filePath.endsWith('.html');
+
+    // Para archivos HTML, agregar tag <base> si no existe
+    if (isHtml && content.includes('<head>')) {
+      // Verificar si ya tiene un tag <base>
+      if (!content.includes('<base')) {
+        // Agregar tag <base> justo después de <head>
+        content = content.replace(
+          /<head>/i,
+          `<head>\n  <base href="${BASE_PATH}/">`
+        );
+        console.log(`✅ Agregado tag <base> en: ${filePath}`);
+      } else {
+        // Si ya existe, actualizarlo
+        content = content.replace(
+          /<base[^>]*>/i,
+          `<base href="${BASE_PATH}/">`
+        );
+      }
+    }
 
     // Reemplazar rutas absolutas que empiezan con /_expo (en cualquier contexto)
-    // Esto debe ir PRIMERO para capturar todas las ocurrencias
     content = content.replace(/\/_expo\//g, `${BASE_PATH}/_expo/`);
     
     // Reemplazar rutas absolutas que empiezan con /static
     content = content.replace(/\/static\//g, `${BASE_PATH}/static/`);
 
-    // Reemplazar rutas absolutas en src/href de scripts y links (más específico)
-    // Capturar cualquier ruta que empiece con / y no sea http:// o https://
+    // Reemplazar CUALQUIER ruta absoluta que empiece con / (excepto URLs completas)
     content = content.replace(/src=["']\/([^"']+)["']/g, (match, path) => {
       // No modificar si es una URL completa
-      if (path.startsWith('http://') || path.startsWith('https://')) {
+      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
         return match;
       }
       return `src="${BASE_PATH}/${path}"`;
     });
     content = content.replace(/href=["']\/([^"']+)["']/g, (match, path) => {
       // No modificar si es una URL completa
-      if (path.startsWith('http://') || path.startsWith('https://')) {
+      if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
         return match;
       }
       return `href="${BASE_PATH}/${path}"`;
