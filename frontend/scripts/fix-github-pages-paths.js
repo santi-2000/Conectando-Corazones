@@ -35,12 +35,22 @@ function fixPathsInFile(filePath) {
       
       // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
       // Usar un patrón más específico que capture todo hasta el siguiente /
-      const pattern1 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
-      const before1 = content;
-      content = content.replace(pattern1, `${BASE_PATH}/_expo`);
-      if (content !== before1) {
+      // También capturar el caso completo sin lookahead para asegurar que funcione
+      const pattern1a = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      const before1a = content;
+      content = content.replace(pattern1a, `${BASE_PATH}/_expo/`);
+      if (content !== before1a) {
         hasDuplicates = true;
-        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo, limpiando...`);
+        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo (patrón completo), limpiando...`);
+      }
+      
+      // También el patrón con lookahead para casos sin la barra final
+      const pattern1b = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
+      const before1b = content;
+      content = content.replace(pattern1b, `${BASE_PATH}/_expo`);
+      if (content !== before1b) {
+        hasDuplicates = true;
+        console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo (lookahead), limpiando...`);
       }
       
       // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
@@ -94,6 +104,15 @@ function fixPathsInFile(filePath) {
     
     // Reemplazar rutas en src/href (solo si NO tienen el prefijo)
     // IMPORTANTE: Verificar que la ruta completa NO tenga el prefijo antes de agregarlo
+    // PRIMERO: Limpiar duplicaciones específicas en src/href antes de procesar
+    // Patrón: src="/Conectando-Corazones/_expo/Conectando-Corazones/..." -> src="/Conectando-Corazones/_expo/..."
+    const duplicatePattern1 = new RegExp(`(src=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+    content = content.replace(duplicatePattern1, `$1${BASE_PATH}/_expo/`);
+    
+    const duplicatePattern2 = new RegExp(`(href=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+    content = content.replace(duplicatePattern2, `$1${BASE_PATH}/_expo/`);
+    
+    // Ahora procesar rutas normales
     content = content.replace(/src=["']\/(_expo\/[^"']+)["']/g, (match, path) => {
       // Si el path ya contiene el prefijo completo, no modificar
       if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
