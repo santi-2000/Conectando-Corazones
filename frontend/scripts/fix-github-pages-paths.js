@@ -284,6 +284,30 @@ function verifyHtmlFiles(dir) {
   return { total: htmlFiles.length, issues };
 }
 
+/**
+ * Crea archivo 404.html para GitHub Pages (redirige a index.html)
+ */
+function create404File() {
+  const indexPath = path.join(DIST_DIR, 'index.html');
+  const file404Path = path.join(DIST_DIR, '404.html');
+  
+  if (!fs.existsSync(indexPath)) {
+    console.warn('⚠️  No se encontró index.html, no se puede crear 404.html');
+    return false;
+  }
+  
+  // Leer index.html y crear 404.html con el mismo contenido
+  try {
+    const indexContent = fs.readFileSync(indexPath, 'utf8');
+    fs.writeFileSync(file404Path, indexContent, 'utf8');
+    console.log('✅ Creado 404.html para manejar routing en GitHub Pages');
+    return true;
+  } catch (error) {
+    console.error('❌ Error creando 404.html:', error.message);
+    return false;
+  }
+}
+
 // ============================================
 // EJECUCIÓN PRINCIPAL
 // ============================================
@@ -301,6 +325,9 @@ if (!fs.existsSync(DIST_DIR)) {
 // Procesar todos los archivos
 const fixed = processDirectory(DIST_DIR);
 console.log(`\n✅ Proceso completado. ${fixed} archivo(s) modificado(s).`);
+
+// Crear 404.html para GitHub Pages
+create404File();
 
 // Verificar archivos HTML
 console.log('\n🔍 Verificando archivos HTML...');

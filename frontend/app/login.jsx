@@ -28,15 +28,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // TEMPORAL: Redirigir automáticamente a home (desactivar login)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('🚀 Redirigiendo automáticamente a /home (login desactivado temporalmente)');
-      router.replace('/home');
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [router]);
-
+  // TEMPORAL: Permitir login sin validación - acepta cualquier usuario/contraseña
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert('Error', 'Por favor ingresa usuario y contraseña');
@@ -45,23 +37,20 @@ export default function LoginScreen() {
 
     try {
       setIsLoggingIn(true);
-      console.log('🔐 Login: Intentando iniciar sesión...');
-      console.log('🌐 Backend URL:', CONFIG.API_BASE_URL);
+      console.log('🔐 Login: Acceso permitido sin validación (modo temporal)');
       console.log('👤 Usuario:', username);
       
-      const result = await login(username, password);
+      // TEMPORAL: Permitir acceso sin validación real
+      // Simular un login exitoso
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simular delay
       
-      if (result.success) {
-        console.log('✅ Login exitoso:', result.user);
-        Alert.alert('Éxito', 'Inicio de sesión exitoso', [
-          { text: 'OK', onPress: () => router.push('/home') }
-        ]);
-      }
+      console.log('✅ Login exitoso (sin validación)');
+      router.push('/home');
     } catch (error) {
       console.error('❌ Error en login:', error);
       Alert.alert(
-        'Error de inicio de sesión',
-        error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.'
+        'Error',
+        'Ocurrió un error. Intenta de nuevo.'
       );
     } finally {
       setIsLoggingIn(false);
