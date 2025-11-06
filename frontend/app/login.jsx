@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -27,6 +27,15 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // TEMPORAL: Redirigir automáticamente a home (desactivar login)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('🚀 Redirigiendo automáticamente a /home (login desactivado temporalmente)');
+      router.replace('/home');
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const handleLogin = async () => {
     if (!username || !password) {

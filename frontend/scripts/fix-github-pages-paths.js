@@ -23,34 +23,30 @@ function fixPathsInFile(filePath) {
     }
 
     // Estrategia: Reemplazar solo rutas que NO tienen ya el prefijo
-    // Primero, reemplazar todas las ocurrencias de /_expo/ y /static/ que NO están dentro de una ruta con prefijo
+    // Primero, verificar si el archivo ya tiene rutas corregidas
+    const hasCorrectedPaths = content.includes(`${BASE_PATH}/_expo/`) || content.includes(`${BASE_PATH}/static/`);
     
-    // Reemplazar /_expo/ (solo si no está precedido por el prefijo en los últimos 30 caracteres)
-    let lastIndex = 0;
-    while (true) {
-      const index = content.indexOf('/_expo/', lastIndex);
-      if (index === -1) break;
-      const before = content.substring(Math.max(0, index - 50), index);
-      if (!before.includes('Conectando-Corazones/')) {
-        content = content.substring(0, index) + `${BASE_PATH}/_expo/` + content.substring(index + 7);
-        lastIndex = index + BASE_PATH.length + 7;
-      } else {
-        lastIndex = index + 7;
-      }
+    if (hasCorrectedPaths) {
+      // Si ya tiene rutas corregidas, NO hacer más reemplazos para evitar duplicación
+      console.log(`⚠️  ${filePath} ya tiene rutas corregidas, saltando...`);
+      return false;
     }
     
-    // Reemplazar /static/ (solo si no está precedido por el prefijo)
-    lastIndex = 0;
-    while (true) {
-      const index = content.indexOf('/static/', lastIndex);
-      if (index === -1) break;
-      const before = content.substring(Math.max(0, index - 50), index);
-      if (!before.includes('Conectando-Corazones/')) {
-        content = content.substring(0, index) + `${BASE_PATH}/static/` + content.substring(index + 8);
-        lastIndex = index + BASE_PATH.length + 8;
-      } else {
-        lastIndex = index + 8;
-      }
+    // Solo reemplazar si NO tiene el prefijo en ninguna parte
+    // Reemplazar rutas en src/href
+    content = content.replace(/src=["']\/(_expo\/[^"']+)["']/g, `src="${BASE_PATH}/$1"`);
+    content = content.replace(/href=["']\/(_expo\/[^"']+)["']/g, `href="${BASE_PATH}/$1"`);
+    content = content.replace(/src=["']\/(static\/[^"']+)["']/g, `src="${BASE_PATH}/$1"`);
+    content = content.replace(/href=["']\/(static\/[^"']+)["']/g, `href="${BASE_PATH}/$1"`);
+    
+    // Reemplazar /_expo/ y /static/ que aparecen directamente (no en src/href)
+    // Solo la primera ocurrencia de cada tipo para evitar duplicación
+    if (content.includes('/_expo/') && !content.includes(`${BASE_PATH}/_expo/`)) {
+      content = content.replace(/\/_expo\//, `${BASE_PATH}/_expo/`);
+    }
+    
+    if (content.includes('/static/') && !content.includes(`${BASE_PATH}/static/`)) {
+      content = content.replace(/\/static\//, `${BASE_PATH}/static/`);
     }
 
     // Reemplazar rutas absolutas en src/href (solo si NO tienen ya el prefijo)
