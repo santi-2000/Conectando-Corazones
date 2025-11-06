@@ -98,11 +98,16 @@ function fixPathsInFile(filePath) {
     const escaped = BASE_PATH.replace(/\//g, '\\/');
     
     // Rutas en src/href que empiezan con /_expo/ pero NO tienen el prefijo
+    // IMPORTANTE: Verificar que NO tenga el prefijo antes de agregarlo
     content = content.replace(
       new RegExp(`src=["']\\/(_expo\\/[^"']+)["']`, 'g'),
       (match, path) => {
-        // Si ya tiene el prefijo, no modificar
+        // Si ya tiene el prefijo completo, no modificar
         if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) {
+          return match;
+        }
+        // Si el match completo ya tiene el prefijo, no modificar
+        if (match.includes(`${BASE_PATH}/_expo/`)) {
           return match;
         }
         return `src="${BASE_PATH}/${path}"`;
@@ -113,6 +118,9 @@ function fixPathsInFile(filePath) {
       new RegExp(`href=["']\\/(_expo\\/[^"']+)["']`, 'g'),
       (match, path) => {
         if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) {
+          return match;
+        }
+        if (match.includes(`${BASE_PATH}/_expo/`)) {
           return match;
         }
         return `href="${BASE_PATH}/${path}"`;

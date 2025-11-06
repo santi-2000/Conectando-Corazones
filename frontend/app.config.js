@@ -33,9 +33,9 @@ export default {
       output: "static",
       bundler: "metro",
       favicon: "./assets/images/logo-fafore.png",
-      // Usar baseUrl para que Expo genere las rutas correctas desde el inicio
-      // El script solo limpiará duplicaciones si las hay
-      baseUrl: process.env.EXPO_PUBLIC_BASE_URL || "/Conectando-Corazones"
+      // NO usar baseUrl aquí - causa duplicación
+      // El script agregará el prefijo correctamente después del build
+      // baseUrl: process.env.EXPO_PUBLIC_BASE_URL || "/Conectando-Corazones"
     },
     plugins: [
       "expo-router",
