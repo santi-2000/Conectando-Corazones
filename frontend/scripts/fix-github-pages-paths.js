@@ -161,10 +161,10 @@ function fixPathsInFile(filePath) {
     
     // Limpiar cualquier duplicación que pueda haber quedado (múltiples pasadas)
     // Patrón más específico: buscar /Conectando-Corazones/_expo/Conectando-Corazones/ y reemplazar
-    let previousContent = '';
+    let previousContentFinal = '';
     let iterations = 0;
-    while (content !== previousContent && iterations < 5) {
-      previousContent = content;
+    while (content !== previousContentFinal && iterations < 5) {
+      previousContentFinal = content;
       iterations++;
       
       // Limpiar duplicaciones específicas
