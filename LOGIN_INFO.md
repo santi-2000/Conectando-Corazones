@@ -29,7 +29,13 @@ Basado en la base de datos, estos son los usuarios que puedes usar para iniciar 
 
 **Todos los usuarios de prueba usan la contraseña: `password`**
 
-El hash bcrypt en la base de datos corresponde a la contraseña `password`.
+El hash bcrypt en la base de datos (`$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi`) corresponde a la contraseña `password`.
+
+### Puedes usar:
+- **Username** (ej: `sofia_garcia`) O
+- **Email** (ej: `sofia.garcia@email.com`)
+
+Ambos funcionan para iniciar sesión.
 
 ## 🔍 Debugging
 
