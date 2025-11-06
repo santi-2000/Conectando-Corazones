@@ -94,26 +94,32 @@ function fixPathsInFile(filePath) {
     });
     
     // Para static, ser más cuidadoso - solo reemplazar si NO está dentro de _expo con prefijo
+    // IMPORTANTE: Solo capturar rutas que empiezan directamente con /static/ (no dentro de otra ruta)
     content = content.replace(/src=["']\/(static\/[^"']+)["']/g, (match, path) => {
-      // Si el path ya contiene el prefijo completo, no modificar
-      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
-      // Si está dentro de un contexto que ya tiene el prefijo, no modificar
-      const beforeMatch = match.substring(0, match.indexOf('/static/'));
-      if (beforeMatch.includes(`${BASE_PATH}/_expo/`)) return match;
+      // Verificar el contexto completo antes de /static/
+      const fullMatch = match;
+      const beforeStatic = fullMatch.substring(0, fullMatch.indexOf('/static/'));
+      // Si ya tiene el prefijo antes de /static/, no modificar
+      if (beforeStatic.includes(`${BASE_PATH}/`)) return match;
+      // Si el path capturado ya contiene el prefijo, no modificar
+      if (path.includes(`${BASE_PATH}/`)) return match;
       return `src="${BASE_PATH}/${path}"`;
     });
     
     content = content.replace(/href=["']\/(static\/[^"']+)["']/g, (match, path) => {
-      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
-      const beforeMatch = match.substring(0, match.indexOf('/static/'));
-      if (beforeMatch.includes(`${BASE_PATH}/_expo/`)) return match;
+      const fullMatch = match;
+      const beforeStatic = fullMatch.substring(0, fullMatch.indexOf('/static/'));
+      if (beforeStatic.includes(`${BASE_PATH}/`)) return match;
+      if (path.includes(`${BASE_PATH}/`)) return match;
       return `href="${BASE_PATH}/${path}"`;
     });
     
     // Reemplazar otras rutas absolutas (solo si NO tienen el prefijo)
+    // IMPORTANTE: Excluir rutas que ya tienen el prefijo o que son _expo/static (ya procesadas)
     content = content.replace(/src=["']\/([^"']+)["']/g, (match, path) => {
       if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') || 
-          path.includes('Conectando-Corazones/')) {
+          path.includes('Conectando-Corazones/') ||
+          path.startsWith('_expo/') || path.startsWith('static/')) {
         return match;
       }
       return `src="${BASE_PATH}/${path}"`;
@@ -121,7 +127,8 @@ function fixPathsInFile(filePath) {
     
     content = content.replace(/href=["']\/([^"']+)["']/g, (match, path) => {
       if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//') ||
-          path.includes('Conectando-Corazones/')) {
+          path.includes('Conectando-Corazones/') ||
+          path.startsWith('_expo/') || path.startsWith('static/')) {
         return match;
       }
       return `href="${BASE_PATH}/${path}"`;
