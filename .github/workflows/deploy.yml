@@ -40,7 +40,13 @@ jobs:
           npx expo export --platform web
         env:
           NODE_ENV: production
-          EXPO_PUBLIC_API_URL: ${{ secrets.API_URL || 'https://tu-backend-url.com/api/v1' }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.API_URL || 'https://conectando-corazones-8ias.onrender.com/api/v1' }}
+          EXPO_PUBLIC_BASE_URL: /Conectando-Corazones
+
+      - name: Fix paths for GitHub Pages
+        working-directory: ./frontend
+        run: |
+          node scripts/fix-github-pages-paths.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
