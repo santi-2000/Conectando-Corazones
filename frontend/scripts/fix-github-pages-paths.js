@@ -35,31 +35,40 @@ function fixPathsInFile(filePath) {
       cleanIterations++;
       
       // Patrón 1: /Conectando-Corazones/_expo/Conectando-Corazones/ -> /Conectando-Corazones/_expo/
-      const pattern1 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      // Usar un patrón más específico que capture todo hasta el siguiente /
+      const pattern1 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
       const before1 = content;
-      content = content.replace(pattern1, `${BASE_PATH}/_expo/`);
+      content = content.replace(pattern1, `${BASE_PATH}/_expo`);
       if (content !== before1) {
         hasDuplicates = true;
         console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en _expo, limpiando...`);
       }
       
       // Patrón 2: /Conectando-Corazones/static/Conectando-Corazones/ -> /Conectando-Corazones/static/
-      const pattern2 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      const pattern2 = new RegExp(`${BASE_PATH.replace('/', '\\/')}/static/${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
       const before2 = content;
-      content = content.replace(pattern2, `${BASE_PATH}/static/`);
+      content = content.replace(pattern2, `${BASE_PATH}/static`);
       if (content !== before2) {
         hasDuplicates = true;
         console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación en static, limpiando...`);
       }
       
       // Patrón 3: /Conectando-Corazones/Conectando-Corazones/ -> /Conectando-Corazones/
-      const pattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      const pattern3 = new RegExp(`${BASE_PATH.replace('/', '\\/')}${BASE_PATH.replace('/', '\\/')}(?=/)`, 'g');
       const before3 = content;
-      content = content.replace(pattern3, `${BASE_PATH}/`);
+      content = content.replace(pattern3, BASE_PATH);
       if (content !== before3) {
         hasDuplicates = true;
         console.warn(`⚠️  ${filePath} (iteración ${cleanIterations}): Duplicación completa, limpiando...`);
       }
+      
+      // Patrón 4: Buscar y reemplazar directamente en src/href attributes
+      // src="/Conectando-Corazones/_expo/Conectando-Corazones/static/..." -> src="/Conectando-Corazones/_expo/static/..."
+      const pattern4a = new RegExp(`(src=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      content = content.replace(pattern4a, `$1${BASE_PATH}/_expo/`);
+      
+      const pattern4b = new RegExp(`(href=["'])${BASE_PATH.replace('/', '\\/')}/_expo/${BASE_PATH.replace('/', '\\/')}/`, 'g');
+      content = content.replace(pattern4b, `$1${BASE_PATH}/_expo/`);
     }
     
     if (cleanIterations > 1) {
