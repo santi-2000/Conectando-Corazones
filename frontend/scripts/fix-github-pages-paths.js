@@ -81,23 +81,32 @@ function fixPathsInFile(filePath) {
     }
     
     // Reemplazar rutas en src/href (solo si NO tienen el prefijo)
+    // IMPORTANTE: Verificar que la ruta completa NO tenga el prefijo antes de agregarlo
     content = content.replace(/src=["']\/(_expo\/[^"']+)["']/g, (match, path) => {
-      if (path.includes('Conectando-Corazones/')) return match;
+      // Si el path ya contiene el prefijo completo, no modificar
+      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
       return `src="${BASE_PATH}/${path}"`;
     });
     
     content = content.replace(/href=["']\/(_expo\/[^"']+)["']/g, (match, path) => {
-      if (path.includes('Conectando-Corazones/')) return match;
+      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
       return `href="${BASE_PATH}/${path}"`;
     });
     
+    // Para static, ser más cuidadoso - solo reemplazar si NO está dentro de _expo con prefijo
     content = content.replace(/src=["']\/(static\/[^"']+)["']/g, (match, path) => {
-      if (path.includes('Conectando-Corazones/')) return match;
+      // Si el path ya contiene el prefijo completo, no modificar
+      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
+      // Si está dentro de un contexto que ya tiene el prefijo, no modificar
+      const beforeMatch = match.substring(0, match.indexOf('/static/'));
+      if (beforeMatch.includes(`${BASE_PATH}/_expo/`)) return match;
       return `src="${BASE_PATH}/${path}"`;
     });
     
     content = content.replace(/href=["']\/(static\/[^"']+)["']/g, (match, path) => {
-      if (path.includes('Conectando-Corazones/')) return match;
+      if (path.includes(`${BASE_PATH}/`) || path.startsWith(`${BASE_PATH}/`)) return match;
+      const beforeMatch = match.substring(0, match.indexOf('/static/'));
+      if (beforeMatch.includes(`${BASE_PATH}/_expo/`)) return match;
       return `href="${BASE_PATH}/${path}"`;
     });
     
