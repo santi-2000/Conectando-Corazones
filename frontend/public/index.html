@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" dir="ltr">
 <head>
+  <base href="/Conectando-Corazones/">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#E6F4FE">
@@ -18,28 +19,28 @@
   <meta name="mobile-web-app-capable" content="yes">
   
   <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="/Conectando-Corazones/manifest.json">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/Conectando-Corazones/icons/icon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/Conectando-Corazones/icons/icon-16x16.png">
   
   <!-- Apple Touch Icons (iOS) -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
-  <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
-  <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.png">
-  <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png">
-  <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
-  <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png">
-  <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/Conectando-Corazones/icons/icon-180x180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/Conectando-Corazones/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/Conectando-Corazones/icons/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/Conectando-Corazones/icons/icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/Conectando-Corazones/icons/icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/Conectando-Corazones/icons/icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/Conectando-Corazones/icons/icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/Conectando-Corazones/icons/icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="57x57" href="/Conectando-Corazones/icons/icon-57x57.png">
   <!-- Fallback para iOS si no hay icono específico -->
-  <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="/Conectando-Corazones/icons/icon-192x192.png">
   
   <!-- Standard Icons -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/Conectando-Corazones/icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/Conectando-Corazones/icons/icon-512x512.png">
   
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -153,7 +154,7 @@
     // Service Worker Registration
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/Conectando-Corazones/sw.js')
           .then((registration) => {
             console.log('Service Worker registrado exitosamente:', registration.scope);
           })

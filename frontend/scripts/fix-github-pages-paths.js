@@ -100,7 +100,12 @@ function fixPathsInDirectory(dir) {
       fixedCount += subCount;
     } else if (file.isFile()) {
       // Procesar archivos HTML, JS, JSON, CSS, y también archivos sin extensión que podrían ser HTML
-      if (/\.(html|js|json|css|map)$/.test(file.name) || file.name === 'index' || file.name === '404') {
+      // También procesar Service Workers y otros archivos importantes
+      if (/\.(html|js|json|css|map)$/.test(file.name) || 
+          file.name === 'index' || 
+          file.name === '404' ||
+          file.name === 'sw.js' ||
+          file.name === 'service-worker.js') {
         processedCount++;
         if (fixPathsInFile(fullPath)) {
           fixedCount++;

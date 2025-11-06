@@ -1,16 +1,17 @@
 const CACHE_NAME = 'conectando-corazones-v1';
+const BASE_PATH = '/Conectando-Corazones';
 const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/assets/images/logo-fafore.png',
-  '/assets/images/home/directorio-apoyos.png',
-  '/assets/images/home/iblioteca-escolar.png',
-  '/assets/images/home/calendario corazon.png',
-  '/assets/images/home/mi-semana-mama.png'
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/static/js/bundle.js`,
+  `${BASE_PATH}/static/css/main.css`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/icons/icon-192x192.png`,
+  `${BASE_PATH}/icons/icon-512x512.png`,
+  `${BASE_PATH}/assets/images/logo-fafore.png`,
+  `${BASE_PATH}/assets/images/home/directorio-apoyos.png`,
+  `${BASE_PATH}/assets/images/home/iblioteca-escolar.png`,
+  `${BASE_PATH}/assets/images/home/calendario corazon.png`,
+  `${BASE_PATH}/assets/images/home/mi-semana-mama.png`
 ];
 
 // Instalar Service Worker
@@ -98,7 +99,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // Fallback para navegación (SPA)
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match(`${BASE_PATH}/`);
           }
         })
     );
@@ -118,8 +119,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'Nueva notificación de Conectando Corazones',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: `${BASE_PATH}/icons/icon-192x192.png`,
+    badge: `${BASE_PATH}/icons/icon-72x72.png`,
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -129,12 +130,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Ver detalles',
-        icon: '/icons/icon-72x72.png'
+        icon: `${BASE_PATH}/icons/icon-72x72.png`
       },
       {
         action: 'close',
         title: 'Cerrar',
-        icon: '/icons/icon-72x72.png'
+        icon: `${BASE_PATH}/icons/icon-72x72.png`
       }
     ]
   };
@@ -151,7 +152,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow(`${BASE_PATH}/`)
     );
   }
 });
