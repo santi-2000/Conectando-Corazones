@@ -22,6 +22,7 @@ const resolveApiBaseUrl = () => {
   
   // En producción, usar la URL de tu backend desplegado
   if (isProduction) {
+    // URL del backend en Render
     const prodUrl = process.env.EXPO_PUBLIC_API_URL || process.env.REACT_APP_API_URL || 'https://conectando-corazones-8ias.onrender.com/api/v1';
     console.log('🌐 Producción detectada. Backend URL:', prodUrl);
     return prodUrl;

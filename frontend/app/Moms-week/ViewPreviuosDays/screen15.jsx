@@ -602,12 +602,12 @@ export default function ViewPreviousDays() {
                     </View>
                   </View>
                 ) : (
-                  <Text style={[
-                    styles.dayPreview,
-                    !day.completed && styles.pendingText
-                  ]}>
-                    {day.preview}
-                  </Text>
+                <Text style={[
+                  styles.dayPreview,
+                  !day.completed && styles.pendingText
+                ]}>
+                  {day.preview}
+                </Text>
                 )}
 
                 {day.completed && (
